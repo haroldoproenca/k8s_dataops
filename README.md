@@ -1,8 +1,16 @@
-# Kubernetes Labs
+# Laboratório de DataOps
 
-Este repositório contém uma coleção de laboratórios, configurações e guias para estudos de Kubernetes.
+## Introdução
 
-Os exemplos foram testados em **Fedora Linux** e **Windows com WSL2 (Ubuntu)**, mas devem ser facilmente adaptáveis para outras distribuições Linux e macOS.
+Este repositório contém guias e configurações para criar um laboratório de DataOps utilizando Kubernetes (K3D) em sua máquina local.
+
+O objetivo é servir como um playground para a instalação, integração e experimentação de soluções de dados, como Airflow, Langflow, MLflow e outras ferramentas do ecossistema MLOps/DataOps.
+
+🚀 Sobre o Ambiente
+Utilizamos o K3D, uma ferramenta leve para executar o k3s (uma distribuição Kubernetes leve) em Docker. Isso permite iniciar um cluster Kubernetes de forma rápida e com baixo consumo de recursos, ideal para desenvolvimento e estudos locais.
+
+💻 Ambientes Testados
+Os exemplos foram testados em Fedora Linux e Windows com WSL2 (Ubuntu), mas devem ser facilmente adaptáveis para outras distribuições Linux e macOS.
 
 ## Pré-requisitos
 
@@ -43,7 +51,9 @@ sudo dnf install helm
 
 **Windows**
 
-No Windows, a forma mais simples é baixar e instalar o [Docker Desktop](https://www.docker.com/products/docker-desktop/), que se integra nativamente com o WSL2.
+No Windows, inicialmente, precisamos instalar o Ubunto para WSL: https://ubuntu.com/desktop/wsl.
+
+Após a instalação, é baixar e instalar o [Docker Desktop](https://www.docker.com/products/docker-desktop/), que se integra nativamente com o WSL2.
 
 ### Instalação do `kubectl`
 
