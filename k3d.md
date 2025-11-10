@@ -39,6 +39,34 @@ k3d cluster create k8s-dataops --agents 3 \
   --k3s-arg "--cluster-cidr=192.168.0.0/16@server:*"
 ```
 
+## 3\. Instalação de Componentes no Cluster
+
+Os comandos a seguir devem ser executados após a criação de um cluster Kubernetes.
+
+### Instalação do Calico (CNI)
+
+```bash
+# Aplica o manifesto do Calico a partir de um arquivo local
+kubectl apply -f bases/calico/3.31/calico.yaml
+
+# Configuração adicional para evitar problemas de RPF (Reverse Path Filtering) em alguns ambientes
+kubectl -n kube-system set env daemonset/calico-node FELIX_IGNORELOOSERPF=true
+```
+
+**Checar o status do Calico:**
+
+```bash
+# Verifica se os pods do calico-node estão rodando em todos os nós
+kubectl -n kube-system get pods -l k8s-app=calico-node
+```
+
+### Instalação do NGINX Ingress Controller
+
+Este comando utiliza Kustomize (`-k`) para aplicar as configurações do Ingress.
+
+```bash
+kubectl apply -k bases/nginx-ingress/5.2.1/
+```
 ### Entendendo os Parâmetros
 
 Vamos detalhar o que cada parâmetro do comando acima faz:
@@ -51,7 +79,7 @@ Vamos detalhar o que cada parâmetro do comando acima faz:
 * `--k3s-arg '--disable-network-policy@server:*'`: Desabilita o controlador de políticas de rede padrão, já que o CNI que será instalado (ex: Cilium) será responsável por gerenciar e aplicar as Network Policies.
 * `--k3s-arg '--cluster-cidr=192.168.0.0/16@server:*'`: Define um intervalo de IPs customizado para os Pods. Isso é útil para evitar conflitos de rede com a sua infraestrutura local ou outras redes Docker.
 
-## 3\. Verificando o Cluster
+## 4\. Verificando o Cluster
 
 Após a execução do comando de criação, o k3d automaticamente configurará seu `kubeconfig` para apontar para o novo cluster.
 
@@ -73,7 +101,7 @@ k3d-k8s-lab-agent-2        Ready    <none>          1m    v1.28.x+k3s1
 
 > **Nota:** Como o Flannel foi desabilitado, os nós podem aparecer com o status `NotReady` até que um novo CNI seja instalado. Isso é esperado.
 
-## 4\. Gerenciando o Cluster
+## 5\. Gerenciando o Cluster
 
 Aqui estão alguns comandos úteis para gerenciar seu cluster k3d.
 

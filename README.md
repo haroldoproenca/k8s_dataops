@@ -113,34 +113,7 @@ Para obter instruções sobre como criar um cluster com `k3d`, consulte o arquiv
 
 ---
 
-## Instalação de Componentes no Cluster
 
-Os comandos a seguir devem ser executados após a criação de um cluster Kubernetes.
-
-### Instalação do Calico (CNI)
-
-```bash
-# Aplica o manifesto do Calico a partir de um arquivo local
-kubectl apply -f bases/calico/3.31/calico.yaml
-
-# Configuração adicional para evitar problemas de RPF (Reverse Path Filtering) em alguns ambientes
-kubectl -n kube-system set env daemonset/calico-node FELIX_IGNORELOOSERPF=true
-```
-
-**Checar o status do Calico:**
-
-```bash
-# Verifica se os pods do calico-node estão rodando em todos os nós
-kubectl -n kube-system get pods -l k8s-app=calico-node
-```
-
-### Instalação do NGINX Ingress Controller
-
-Este comando utiliza Kustomize (`-k`) para aplicar as configurações do Ingress.
-
-```bash
-kubectl apply -k bases/nginx-ingress/5.2.1/
-```
 
 ## Referências
 
