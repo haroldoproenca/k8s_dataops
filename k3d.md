@@ -8,8 +8,8 @@ O cluster configurado por este guia é ideal para testes avançados, pois ele ve
 
 Antes de começar, certifique-se de que você tem as seguintes ferramentas instaladas e configuradas em sua máquina:
 
-  * **[Docker](https://docs.docker.com/engine/install/):** Essencial para executar os nós do cluster em contêineres.
-  * **[kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/):** A ferramenta de linha de comando para interagir com o cluster Kubernetes.
+* **[Docker](https://docs.docker.com/engine/install/):** Essencial para executar os nós do cluster em contêineres.
+* **[kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/):** A ferramenta de linha de comando para interagir com o cluster Kubernetes.
 
 ## 1\. Instalação do k3d
 
@@ -30,7 +30,7 @@ k3d --version
 O comando a seguir criará um cluster chamado `k8s-lab` com 1 master e 3 workers (agents).
 
 ```bash
-k3d cluster create k8s-lab --agents 3 \
+k3d cluster create k8s-dataops --agents 3 \
   -p "80:80@loadbalancer" \
   -p "443:443@loadbalancer" \
   --k3s-arg "--disable=traefik@server:*" \
@@ -43,13 +43,13 @@ k3d cluster create k8s-lab --agents 3 \
 
 Vamos detalhar o que cada parâmetro do comando acima faz:
 
-  * `k3d cluster create k8s-lab`: Cria um cluster com o nome `k8s-lab`.
-  * `--agents 3`: Especifica que o cluster deve ter **3 nós de agente (worker)**, além do nó de controle (master).
-  * `-p "80:80@loadbalancer"` e `-p "443:443@loadbalancer"`: Mapeia as portas **80 e 443** da sua máquina local (host) para o Load Balancer do k3d. Isso permite acessar serviços expostos via Ingress, como se estivessem rodando localmente.
-  * `--k3s-arg "--disable=traefik@server:*"`: Desabilita o **Traefik**, o Ingress Controller que vem instalado por padrão no K3s. Isso é necessário se você planeja instalar outro Ingress Controller, como NGINX, Istio ou Contour.
-  * `--k3s-arg '--flannel-backend=none@server:*'`: Desabilita o **Flannel**, o CNI (Container Network Interface) padrão do K3s. Esta etapa é crucial para instalar um CNI mais avançado, como **Cilium** ou **Calico**.
-  * `--k3s-arg '--disable-network-policy@server:*'`: Desabilita o controlador de políticas de rede padrão, já que o CNI que será instalado (ex: Cilium) será responsável por gerenciar e aplicar as Network Policies.
-  * `--k3s-arg '--cluster-cidr=192.168.0.0/16@server:*'`: Define um intervalo de IPs customizado para os Pods. Isso é útil para evitar conflitos de rede com a sua infraestrutura local ou outras redes Docker.
+* `k3d cluster create k8s-dataops`: Cria um cluster com o nome `k8s-lab`.
+* `--agents 3`: Especifica que o cluster deve ter **3 nós de agente (worker)**, além do nó de controle (master).
+* `-p "80:80@loadbalancer"` e `-p "443:443@loadbalancer"`: Mapeia as portas **80 e 443** da sua máquina local (host) para o Load Balancer do k3d. Isso permite acessar serviços expostos via Ingress, como se estivessem rodando localmente.
+* `--k3s-arg "--disable=traefik@server:*"`: Desabilita o **Traefik**, o Ingress Controller que vem instalado por padrão no K3s. Isso é necessário se você planeja instalar outro Ingress Controller, como NGINX, Istio ou Contour.
+* `--k3s-arg '--flannel-backend=none@server:*'`: Desabilita o **Flannel**, o CNI (Container Network Interface) padrão do K3s. Esta etapa é crucial para instalar um CNI mais avançado, como **Cilium** ou **Calico**.
+* `--k3s-arg '--disable-network-policy@server:*'`: Desabilita o controlador de políticas de rede padrão, já que o CNI que será instalado (ex: Cilium) será responsável por gerenciar e aplicar as Network Policies.
+* `--k3s-arg '--cluster-cidr=192.168.0.0/16@server:*'`: Define um intervalo de IPs customizado para os Pods. Isso é útil para evitar conflitos de rede com a sua infraestrutura local ou outras redes Docker.
 
 ## 3\. Verificando o Cluster
 
@@ -77,27 +77,24 @@ k3d-k8s-lab-agent-2        Ready    <none>          1m    v1.28.x+k3s1
 
 Aqui estão alguns comandos úteis para gerenciar seu cluster k3d.
 
-  * **Listar clusters existentes:**
+* **Listar clusters existentes:**
 
-    ```bash
-    k3d cluster list
-    ```
+  ```bash
+  k3d cluster list
+  ```
+* **Parar um cluster (sem deletar):**
 
-  * **Parar um cluster (sem deletar):**
+  ```bash
+  k3d cluster stop k8s-lab
+  ```
+* **Iniciar um cluster parado:**
 
-    ```bash
-    k3d cluster stop k8s-lab
-    ```
+  ```bash
+  k3d cluster start k8s-lab
+  ```
+* **Deletar o cluster:**
+  Quando não precisar mais do cluster, você pode removê-lo completamente para liberar os recursos da sua máquina.
 
-  * **Iniciar um cluster parado:**
-
-    ```bash
-    k3d cluster start k8s-lab
-    ```
-
-  * **Deletar o cluster:**
-    Quando não precisar mais do cluster, você pode removê-lo completamente para liberar os recursos da sua máquina.
-
-    ```bash
-    k3d cluster delete k8s-lab
-    ```
+  ```bash
+  k3d cluster delete k8s-lab
+  ```

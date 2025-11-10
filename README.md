@@ -8,7 +8,7 @@ Os exemplos foram testados em **Fedora Linux** e **Windows com WSL2 (Ubuntu)**, 
 
 As ferramentas a seguir precisam ser instaladas na sua máquina local ou no ambiente WSL antes de prosseguir.
 
-### Instalação do Docker
+### Instalação do Docker, Helm e kubectl
 
 O Docker é a base para executar contêineres e, consequentemente, os clusters locais com `k3d` ou `kind`.
 
@@ -39,7 +39,7 @@ docker info
 
 #Instalação do Helm
 sudo dnf install helm
-````
+```
 
 **Windows**
 
@@ -82,8 +82,6 @@ sudo apt-get update
 sudo apt-get install helm --yes
 ```
 
-**Fedora Desktop 43**
-
 ### Instalação do Go
 
 O Go é necessário para algumas ferramentas do ecossistema e para compilar projetos.
@@ -105,15 +103,15 @@ source ~/.bashrc
 go version
 ```
 
------
+---
 
 ## Criação de Clusters
 
 ### Utilizando k3d
 
-Para obter instruções sobre como criar um cluster com `k3d`, consulte o arquivo k3d.md.
+Para obter instruções sobre como criar um cluster com `k3d`, consulte o arquivo [k3d.md](k3d.md).
 
------
+---
 
 ## Instalação de Componentes no Cluster
 
@@ -123,7 +121,7 @@ Os comandos a seguir devem ser executados após a criação de um cluster Kubern
 
 ```bash
 # Aplica o manifesto do Calico a partir de um arquivo local
-kubectl apply -f bases/calico/3.30/calico.yaml
+kubectl apply -f bases/calico/3.31/calico.yaml
 
 # Configuração adicional para evitar problemas de RPF (Reverse Path Filtering) em alguns ambientes
 kubectl -n kube-system set env daemonset/calico-node FELIX_IGNORELOOSERPF=true
@@ -141,12 +139,13 @@ kubectl -n kube-system get pods -l k8s-app=calico-node
 Este comando utiliza Kustomize (`-k`) para aplicar as configurações do Ingress.
 
 ```bash
-kubectl apply -k bases/nginx-ingress/5.0.0/
+kubectl apply -k bases/nginx-ingress/5.2.1/
 ```
 
 ## Referências
 
-  * [Instalação do Kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
-  * [Instalação do Go (Golang)](https://go.dev/doc/install)
+* [Instalação do K3D](https://k3d.io/stable/#installation)
+* [Instalação do Go (Golang)](https://go.dev/doc/install)
+* [Instalação do Ubuntu no WSL](https://ubuntu.com/desktop/wsl)
 
 <!-- end list -->
