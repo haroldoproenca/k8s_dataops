@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: langflow-config
+data:
+  DO_NOT_TRACK: "false"
+  LANGFLOW_BACKEND_ONLY: "true"
+  LANGFLOW_PORT: "7860"
+  LANGFLOW_WORKER_TIMEOUT: "60000"
+  LANGFLOW_WORKERS: "1"
+  LANGFLOW_NUM_WORKERS: "1"
+  LANGFLOW_ALEMBIC_LOG_FILE: "/app/db/alembic.log"
+  LANGFLOW_UPDATE_STARTER_PROJECTS: "false"
+  #LANGFLOW_CORS_ORIGINS: "http://langflow.nexusplatform.com.br,http://localhost:8080"

@@ -1,0 +1,59 @@
+# metabase-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: langflow-ingress
+  annotations:
+    # Anotações de CORS mantidas. Usando o host específico para mais segurança.
+    nginx.org/cors-allow-origin: "http://langflow.k8sdataops.com.br"
+    nginx.org/cors-allow-methods: "GET, PUT, POST, DELETE, OPTIONS"
+    nginx.org/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: langflow.k8sdataops.com.br
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: langflow-service # Nome do Service do Metabase
+                port:
+                  number: 8080
+  # Para habilitar HTTPS (TLS), você precisaria de um Secret com o certificado
+  # e descomentar as linhas abaixo:
+  # tls:
+  #  - hosts:
+  #    - metabase.seusite.com
+  #    secretName: seu-tls-secret
+---
+# metabase-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: langflowapi-ingress
+  annotations:
+    # Anotações de CORS mantidas. Usando o host específico para mais segurança.
+    nginx.org/cors-allow-origin: "http://langflow.k8sdataops.com.br"
+    nginx.org/cors-allow-methods: "GET, PUT, POST, DELETE, OPTIONS"
+    nginx.org/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: langflowapi.k8sdataops.com.br
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: langflow-service-backend # Nome do Service do Metabase
+                port:
+                  number: 7860
+  # Para habilitar HTTPS (TLS), você precisaria de um Secret com o certificado
+  # e descomentar as linhas abaixo:
+  # tls:
+  #  - hosts:
+  #    - metabase.seusite.com
+  #    secretName: seu-tls-secret

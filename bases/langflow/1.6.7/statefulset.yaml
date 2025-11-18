@@ -1,0 +1,282 @@
+---
+# Source: langflow-ide/charts/postgresql/templates/primary/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: langflow-ide-postgresql
+  namespace: "langflow"
+  labels:
+    app.kubernetes.io/instance: langflow-ide
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/version: 16.4.0
+    helm.sh/chart: postgresql-15.5.38
+    app.kubernetes.io/component: primary
+spec:
+  replicas: 1
+  serviceName: langflow-ide-postgresql-hl
+  updateStrategy:
+    rollingUpdate: {}
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: langflow-ide
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/component: primary
+  template:
+    metadata:
+      name: langflow-ide-postgresql
+      labels:
+        app.kubernetes.io/instance: langflow-ide
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: postgresql
+        app.kubernetes.io/version: 16.4.0
+        helm.sh/chart: postgresql-15.5.38
+        app.kubernetes.io/component: primary
+    spec:
+      serviceAccountName: langflow-ide-postgresql
+      
+      automountServiceAccountToken: false          
+      securityContext:
+        fsGroup: 1001
+        fsGroupChangePolicy: Always
+        supplementalGroups: []
+        sysctls: []
+      hostNetwork: false
+      hostIPC: false
+      containers:
+        - name: postgresql
+          image: docker.io/bitnami/postgresql:16.4.0-debian-12-r14
+          imagePullPolicy: "IfNotPresent"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 1001
+            runAsNonRoot: true
+            runAsUser: 1001
+            seLinuxOptions: {}
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: BITNAMI_DEBUG
+              value: "false"
+            - name: POSTGRESQL_PORT_NUMBER
+              value: "5432"
+            - name: POSTGRESQL_VOLUME_DIR
+              value: "/bitnami/postgresql"
+            - name: PGDATA
+              value: "/bitnami/postgresql/data"
+            # Authentication
+            - name: POSTGRES_USER
+              value: "langflow"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: langflow-ide-postgresql
+                  key: password
+            - name: POSTGRES_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: langflow-ide-postgresql
+                  key: postgres-password
+            - name: POSTGRES_DATABASE
+              value: "langflow-db"
+            # LDAP
+            - name: POSTGRESQL_ENABLE_LDAP
+              value: "no"
+            # TLS
+            - name: POSTGRESQL_ENABLE_TLS
+              value: "no"
+            # Audit
+            - name: POSTGRESQL_LOG_HOSTNAME
+              value: "false"
+            - name: POSTGRESQL_LOG_CONNECTIONS
+              value: "false"
+            - name: POSTGRESQL_LOG_DISCONNECTIONS
+              value: "false"
+            - name: POSTGRESQL_PGAUDIT_LOG_CATALOG
+              value: "off"
+            # Others
+            - name: POSTGRESQL_CLIENT_MIN_MESSAGES
+              value: "error"
+            - name: POSTGRESQL_SHARED_PRELOAD_LIBRARIES
+              value: "pgaudit"
+          ports:
+            - name: tcp-postgresql
+              containerPort: 5432
+          livenessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - exec pg_isready -U "langflow" -d "dbname=langflow-db" -h 127.0.0.1 -p 5432
+          readinessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - -e
+                - |
+                  exec pg_isready -U "langflow" -d "dbname=langflow-db" -h 127.0.0.1 -p 5432
+                  [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+          volumeMounts:
+            - name: empty-dir
+              mountPath: /tmp
+              subPath: tmp-dir
+            - name: empty-dir
+              mountPath: /opt/bitnami/postgresql/conf
+              subPath: app-conf-dir
+            - name: empty-dir
+              mountPath: /opt/bitnami/postgresql/tmp
+              subPath: app-tmp-dir
+            - name: dshm
+              mountPath: /dev/shm
+            - name: data
+              mountPath: /bitnami/postgresql
+      volumes:
+        - name: empty-dir
+          emptyDir: {}
+        - name: dshm
+          emptyDir:
+            medium: Memory
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: data
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "8Gi"
+---
+# Source: langflow-ide/templates/backend-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: langflow-service
+  labels:
+    app: langflow-service
+    chart: langflow-ide-0.1.1
+    release: langflow-ide
+    langflow-scope: "backend"
+spec:
+  serviceName: "langflow-service-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: langflow-service
+      chart: langflow-ide-0.1.1
+      release: langflow-ide
+      langflow-scope: "backend"
+  template:
+    metadata:
+      labels:
+        app: langflow-service
+        chart: langflow-ide-0.1.1
+        release: langflow-ide
+        langflow-scope: "backend"
+    spec:
+      serviceAccountName: langflow-service
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      volumes:
+        - emptyDir: {}
+          name: flows
+        - emptyDir: {}
+          name: tmp
+        - emptyDir: {}
+          name: data
+        - emptyDir: {}
+          name: db
+      containers:
+        - name: langflow-ide
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+          image: "langflowai/langflow:latest"
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "-c"]
+          args:
+            - >
+              set -e &&
+              if [ -n "$LF_CHART_EXTERNALDB_DRIVER" ]; then
+                echo "LF_CHART_EXTERNALDB_DRIVER is set, using external database at $LF_CHART_EXTERNALDB_HOST" &&
+                export LANGFLOW_DATABASE_URL="$LF_CHART_EXTERNALDB_DRIVER://$LF_CHART_EXTERNALDB_USER:$LF_CHART_EXTERNALDB_PASSWORD@$LF_CHART_EXTERNALDB_HOST:$LF_CHART_EXTERNALDB_PORT/$LF_CHART_EXTERNALDB_DATABASE"
+              else
+                echo "LF_CHART_EXTERNALDB_DRIVER is not set, using SQLLite database"
+              fi &&
+              langflow run --host 0.0.0.0 --port 7860
+          ports:
+            - name: http
+              containerPort: 7860
+              protocol: TCP
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - mountPath: /app/flows
+              name: flows
+              readOnly: false
+            - mountPath: /tmp
+              name: tmp
+              readOnly: false
+            - mountPath: /app/data
+              name: data
+              readOnly: false
+            - mountPath: /app/db
+              name: db
+              readOnly: false
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+              
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3   
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          envFrom:
+          - configMapRef:
+              name: langflow-config  # O nome do ConfigMap que criamos
+          - secretRef:
+              name: langflow-secret     
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi

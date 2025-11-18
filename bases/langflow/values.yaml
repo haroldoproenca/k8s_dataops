@@ -1,0 +1,7 @@
+postgresql:
+  enabled: true
+  auth:
+    username: "langflow"
+    password: "langflow-postgres"
+    database: "langflow-db"
+
