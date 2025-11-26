@@ -66,7 +66,8 @@ Armazena a chave e o certificado gerados dentro do cluster.
 ```
 kubectl create secret tls wild-k8sdataops-tls \
   --key wildcard.key \
-  --cert wildcard.crt
+  --cert wildcard.crt --dry-run=client -o yaml > secret_certificate.yaml
+kubectl apply -f secret_certificate.yaml
 ```
 
 ### 2. Aplicar Manifestos de Ingress
