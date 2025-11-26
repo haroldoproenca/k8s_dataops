@@ -36,7 +36,7 @@ spec:
     spec:
       serviceAccountName: langflow-ide-postgresql
       
-      automountServiceAccountToken: false          
+      automountServiceAccountToken: false        
       securityContext:
         fsGroup: 1001
         fsGroupChangePolicy: Always
@@ -218,7 +218,7 @@ spec:
             runAsGroup: 1000
             runAsNonRoot: true
             runAsUser: 1000
-          image: "langflowai/langflow:latest"
+          image: "langflowai/langflow:1.6.9"
           imagePullPolicy: IfNotPresent
           command: ["/bin/bash", "-c"]
           args:
@@ -266,12 +266,20 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 3
-          envFrom:
-          - configMapRef:
-              name: langflow-config  # O nome do ConfigMap que criamos
-          - secretRef:
-              name: langflow-secret     
+            failureThreshold: 3   
+          env:
+            - name: LANGFLOW_BACKEND_ONLY
+              value: "true"
+            - name: LANGFLOW_NUM_WORKERS
+              value: "1"
+            - name: LANGFLOW_DATABASE_URL
+              value: "sqlite:////data/langflow.db"
+            - name: LANGFLOW_PORT
+              value: "7860"
+            - name: LANGFLOW_ALEMBIC_LOG_FILE
+              value: /app/db/alembic.log
+            - name: LANGFLOW_UPDATE_STARTER_PROJECTS
+              value: "false"
   volumeClaimTemplates:
   - metadata:
       name: data

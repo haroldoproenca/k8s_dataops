@@ -8,6 +8,7 @@ metadata:
     nginx.org/cors-allow-origin: "http://langflow.k8sdataops.com.br"
     nginx.org/cors-allow-methods: "GET, PUT, POST, DELETE, OPTIONS"
     nginx.org/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
   rules:
@@ -21,12 +22,10 @@ spec:
                 name: langflow-service # Nome do Service do Metabase
                 port:
                   number: 8080
-  # Para habilitar HTTPS (TLS), você precisaria de um Secret com o certificado
-  # e descomentar as linhas abaixo:
-  # tls:
-  #  - hosts:
-  #    - metabase.seusite.com
-  #    secretName: seu-tls-secret
+  tls:
+   - hosts:
+     - langflow.k8sdataops.com.br
+     secretName: wild-k8sdataops-tls
 ---
 # metabase-ingress.yaml
 apiVersion: networking.k8s.io/v1
@@ -51,9 +50,7 @@ spec:
                 name: langflow-service-backend # Nome do Service do Metabase
                 port:
                   number: 7860
-  # Para habilitar HTTPS (TLS), você precisaria de um Secret com o certificado
-  # e descomentar as linhas abaixo:
-  # tls:
-  #  - hosts:
-  #    - metabase.seusite.com
-  #    secretName: seu-tls-secret
+  tls:
+   - hosts:
+     - langflowapi.k8sdataops.com.br
+     secretName: wild-k8sdataops-tls
