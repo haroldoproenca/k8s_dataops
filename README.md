@@ -123,7 +123,13 @@ Para obter instruções sobre como criar um cluster com `k3d`, consulte o arquiv
 
 ---
 
+## Laboratórios
 
+## Langflow
+
+Passo a passo de como implementar localmente a stack do [Langflow](bases/langflow/README.md) para testar a utilização de agentes.
+
+---
 
 ## Referências
 
