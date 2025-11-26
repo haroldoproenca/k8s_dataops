@@ -40,7 +40,7 @@ spec:
           emptyDir: {}
       containers:
         - name: langflow-ide
-          image: "langflowai/langflow-frontend:1.6.9"
+          image: "langflowai/langflow-frontend:1.6.5"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false

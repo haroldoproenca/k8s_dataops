@@ -46,7 +46,8 @@ spec:
       hostIPC: false
       containers:
         - name: postgresql
-          image: docker.io/bitnami/postgresql:16.4.0-debian-12-r14
+          #image: docker.io/bitnami/postgresql:sha256-9dc1c74aff55144030fb0307666dfa97aefadf5914749696a348fb8f36eb4d7d.att
+          image: bitnami/postgresql:latest
           imagePullPolicy: "IfNotPresent"
           securityContext:
             allowPrivilegeEscalation: false
@@ -266,20 +267,12 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 3   
-          env:
-            - name: LANGFLOW_BACKEND_ONLY
-              value: "true"
-            - name: LANGFLOW_NUM_WORKERS
-              value: "1"
-            - name: LANGFLOW_DATABASE_URL
-              value: "sqlite:////data/langflow.db"
-            - name: LANGFLOW_PORT
-              value: "7860"
-            - name: LANGFLOW_ALEMBIC_LOG_FILE
-              value: /app/db/alembic.log
-            - name: LANGFLOW_UPDATE_STARTER_PROJECTS
-              value: "false"
+            failureThreshold: 3
+          envFrom:
+          - configMapRef:
+              name: langflow-config  # O nome do ConfigMap que criamos
+          - secretRef:
+              name: langflow-secret   
   volumeClaimTemplates:
   - metadata:
       name: data
