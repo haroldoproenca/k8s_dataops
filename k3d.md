@@ -11,6 +11,17 @@ Antes de começar, certifique-se de que você tem as seguintes ferramentas insta
 * **[Docker](https://docs.docker.com/engine/install/):** Essencial para executar os nós do cluster em contêineres.
 * **[kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/):** A ferramenta de linha de comando para interagir com o cluster Kubernetes.
 
+Para Linux Ubuntu:
+
+```bash
+sudo apt-get update
+sudo apt-get install docker.io
+sudo usermod -aG docker $USER
+sudo systemctl enable docker
+sudo systemctl start docker
+docker ps
+```
+
 ## 1\. Instalação do k3d
 
 Você pode instalar o k3d usando o script de instalação oficial. O comando abaixo irá baixar e executar o script.
@@ -27,7 +38,7 @@ k3d --version
 
 ## 2\. Criação do Cluster
 
-O comando a seguir criará um cluster chamado `k8s-lab` com 1 master e 3 workers (agents).
+O comando a seguir criará um cluster chamado `k8s-dataops` com 1 master e 3 workers (agents).
 
 ```bash
 k3d cluster create k8s-dataops --agents 3 \
@@ -71,7 +82,7 @@ kubectl apply -k bases/nginx-ingress/5.2.1/
 
 Vamos detalhar o que cada parâmetro do comando acima faz:
 
-* `k3d cluster create k8s-dataops`: Cria um cluster com o nome `k8s-lab`.
+* `k3d cluster create k8s-dataops`: Cria um cluster com o nome `k8s-dataops`.
 * `--agents 3`: Especifica que o cluster deve ter **3 nós de agente (worker)**, além do nó de controle (master).
 * `-p "80:80@loadbalancer"` e `-p "443:443@loadbalancer"`: Mapeia as portas **80 e 443** da sua máquina local (host) para o Load Balancer do k3d. Isso permite acessar serviços expostos via Ingress, como se estivessem rodando localmente.
 * `--k3s-arg "--disable=traefik@server:*"`: Desabilita o **Traefik**, o Ingress Controller que vem instalado por padrão no K3s. Isso é necessário se você planeja instalar outro Ingress Controller, como NGINX, Istio ou Contour.
