@@ -1,0 +1,43 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-webapp-deployment
+  namespace: nexus-webapp
+spec:
+  selector:
+    matchLabels:
+      app: nexus-webapp
+  template:
+    metadata:
+      labels:
+        app: nexus-webapp
+    spec:
+      imagePullSecrets:
+        - name: ocir-secret
+      containers:
+      - name: nexus-webapp-container
+        image: gru.ocir.io/gr9ajzidlcfe/nexus-webapp:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "150m"
+            memory: "128Mi"
+        # "volumeMounts" está no lugar certo, dentro de "containers"
+        volumeMounts:
+        - name: nginx-config-volume
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: default.conf
+          
+      # --- SEÇÃO CORRIGIDA ---
+      # "volumes" foi movido para fora de "containers" e agora está
+      # no mesmo nível, diretamente sob "spec".
+      volumes:
+      - name: nginx-config-volume
+        configMap:
+          name: nexus-webapp-nginx-conf

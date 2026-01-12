@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+
+namespace: nexus-webapp
+
+resources:
+- ../../../bases/nexus-webapp/1.0.0
+patches:
+- path: deployment.yaml
+#- path: service.yaml

@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-api-deployment
+  labels:
+    app: nexus-api
+spec:
+  selector:
+    matchLabels:
+      app: nexus-api
+  template:
+    metadata:
+      labels:
+        app: nexus-api
+    spec:
+      containers:
+      - name: nexus-api-container
+        image: nexus-api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "300m"
+            memory: "256Mi"
+        envFrom:
+        - secretRef:
+            name: nexus-db-credentials
+#        # 1. Startup Probe: Dá tempo para a API iniciar e conectar ao banco.
+#        # O Kubernetes espera essa probe ter sucesso antes de iniciar as outras.
+#        startupProbe:
+#          httpGet:
+#            path: /healthz
+#            port: 8000
+#          failureThreshold: 30  # Tentará por 30 vezes...
+#          periodSeconds: 10     # ...a cada 10 segundos. (Total de 5 minutos de tolerância)
+#        # 2. Liveness Probe: Reinicia o pod se ele travar.
+#        # Se essa probe falhar, o Kubernetes entende que a aplicação está em um estado
+#        # irrecuperável e reinicia o container.
+#        livenessProbe:
+#          httpGet:
+#            path: /healthz
+#            port: 8000
+#          initialDelaySeconds: 15 # Espera 15s após o startupProbe ter sucesso
+#          periodSeconds: 20       # Verifica a cada 20 segundos
+#          failureThreshold: 3     # Reinicia após 3 falhas consecutivas
+#        # 3. Readiness Probe: Remove o pod do balanceador de carga se ele não estiver pronto.
+#        # Se a conexão com o banco cair, essa probe falhará. O Kubernetes deixará
+#        # de enviar tráfego para este pod, mas não o reiniciará imediatamente.
+#        readinessProbe:
+#          httpGet:
+#            path: /healthz/db
+#            port: 8000
+#          initialDelaySeconds: 5  # Espera 5s após o startupProbe ter sucesso
+#          periodSeconds: 10       # Verifica a cada 10 segundos
+#          failureThreshold: 3     # Marca como "NotReady" após 3 falhas
+#

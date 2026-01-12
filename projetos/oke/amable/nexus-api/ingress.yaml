@@ -1,0 +1,56 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nexus-api-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # ATENÇÃO: Verifique se seu Ingress Controller é o da NGINX Inc. ou da Comunidade.
+    # Se for o da comunidade, essas anotações 'nginx.org' serão ignoradas.
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://amable.nexusplatform.com.br"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, POST, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
+spec:
+  ingressClassName: nginx
+  
+  # CORREÇÃO: O bloco TLS foi movido para cá (raiz do spec)
+  tls:
+  - hosts:
+    - amable-api.nexusplatform.com.br
+    secretName: amable-api-tls-secret
+
+  rules:
+  - host: amable-api.nexusplatform.com.br
+    http:
+      paths:
+      # [Regra Principal da API]
+      - path: /api/
+        pathType: Prefix
+        backend:
+          service:
+            name: nexus-api-service
+            port:
+              number: 80
+
+      # [Rotas de Documentação]
+      - path: /docs
+        pathType: Prefix
+        backend:
+          service:
+            name: nexus-api-service
+            port:
+              number: 80
+      - path: /redoc
+        pathType: Prefix
+        backend:
+          service:
+            name: nexus-api-service
+            port:
+              number: 80
+      - path: /openapi.json
+        pathType: Prefix
+        backend:
+          service:
+            name: nexus-api-service
+            port:
+              number: 80

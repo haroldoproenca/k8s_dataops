@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nexus-webapp-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  # O bloco TLS fica aqui, na raiz de 'spec'
+  tls:
+  - hosts:
+    - amable.nexusplatform.com.br
+    secretName: amable-tls-secret
+  
+  rules:
+  - host: amable.nexusplatform.com.br
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nexus-webapp-service
+            port:
+              number: 80

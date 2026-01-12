@@ -1,0 +1,12 @@
+# minha-app/base/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - deployment.yaml
+  - ingress.yaml
+  - namespace.yaml
+  - pvc.yaml
+  - secret.yaml
+  - service.yaml
+  - hpa.yaml
