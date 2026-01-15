@@ -5,6 +5,7 @@ metadata:
   namespace: nginx-ingress
   annotations:
     oci.oraclecloud.com/load-balancer-type: "nlb"
+    oci-network-load-balancer.oraclecloud.com/oci-network-security-groups: "ocid1.networksecuritygroup.oc1.sa-saopaulo-1.aaaaaaaamrttg4r7fpctavkvk3jkatubj6qgozxr5sippr7ppo3tam5ilnva"
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
