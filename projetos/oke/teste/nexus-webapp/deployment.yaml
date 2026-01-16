@@ -3,7 +3,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nexus-webapp-deployment
-  namespace: nexus-webapp
 spec:
   selector:
     matchLabels:
@@ -14,11 +13,11 @@ spec:
         app: nexus-webapp
     spec:
       imagePullSecrets:
-        - name: ocir-secret
+        - name: ghcr-secret
       containers:
       - name: nexus-webapp-container
-        image: gru.ocir.io/gr9ajzidlcfe/nexus-webapp:1.0.0
-        imagePullPolicy: IfNotPresent
+        image: ghcr.io/synapsehealthtech/nexus-webapp:v0.0.2
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
         resources:

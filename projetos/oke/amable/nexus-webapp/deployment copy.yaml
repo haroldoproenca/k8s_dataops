@@ -13,10 +13,10 @@ spec:
         app: nexus-webapp
     spec:
       imagePullSecrets:
-        - name: ghcr-secret
+        - name: ocir-secret
       containers:
       - name: nexus-webapp-container
-        image: ghcr.io/synapsehealthtech/nexus-webapp:v0.0.2
+        image: gru.ocir.io/gr9ajzidlcfe/nexus-webapp:1.0.1
         imagePullPolicy: Always
         ports:
         - containerPort: 80

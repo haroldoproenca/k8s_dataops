@@ -16,10 +16,10 @@ spec:
         app: nexus-api
     spec:
       imagePullSecrets:
-        - name: ghcr-secret
+        - name: ocir-secret
       containers:
       - name: nexus-api-container
-        image: ghcr.io/synapsehealthtech/nexus-api:v0.0.4
+        image: gru.ocir.io/gr9ajzidlcfe/nexus-api:1.0.1
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
