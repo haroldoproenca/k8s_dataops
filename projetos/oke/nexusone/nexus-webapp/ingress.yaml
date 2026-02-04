@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nexus-webapp-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  # O bloco TLS fica aqui, na raiz de 'spec'
+  tls:
+  - hosts:
+    - nexusone.nexusplatform.com.br
+    secretName: nexusone-tls-secret
+  
+  rules:
+  - host: nexusone.nexusplatform.com.br
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nexus-webapp-service
+            port:
+              number: 80

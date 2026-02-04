@@ -1,26 +1,23 @@
-
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nexus-api-deployment
+  name: nexus-cep-deployment
   labels:
-    app: nexus-api
+    app: nexus-cep
 spec:
   selector:
     matchLabels:
-      app: nexus-api
+      app: nexus-cep
   template:
     metadata:
       labels:
-        app: nexus-api
+        app: nexus-cep
     spec:
-      imagePullSecrets:
-        - name: ghcr-secret
       containers:
-      - name: nexus-api-container
-        image: ghcr.io/synapsehealthtech/nexus-api:v0.1.9
-        imagePullPolicy: Always
+      - name: nexus-cep-container
+        image: nexus-cep:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
         resources:
@@ -33,9 +30,6 @@ spec:
         envFrom:
         - secretRef:
             name: nexus-db-credentials
-        env:
-        - name: CORS_ORIGINS
-          value: "https://amable.nexusplatform.com.br,https://amable-api.nexusplatform.com.br,http://localhost:5173"
 #        # 1. Startup Probe: Dá tempo para a API iniciar e conectar ao banco.
 #        # O Kubernetes espera essa probe ter sucesso antes de iniciar as outras.
 #        startupProbe:

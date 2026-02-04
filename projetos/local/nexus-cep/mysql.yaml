@@ -1,0 +1,43 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  labels:
+    app: mysql
+    tier: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+      tier: database
+  template:
+    metadata:
+      labels:
+        app: mysql
+        tier: database
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        # --- ATENÇÃO: Utilize Kubernetes Secrets para dados sensíveis em produção. ---
+        - name: MYSQL_ROOT_PASSWORD
+          value: "root_password_segura"
+        - name: MYSQL_DATABASE
+          value: "nexuscep_db"
+        - name: MYSQL_USER
+          value: "nexuscep_user"
+        - name: MYSQL_PASSWORD
+          value: "User_password_segura1!"
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pvc
