@@ -2,34 +2,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nexus-api-deployment
+  name: nexus-adm-api-deployment
   labels:
-    app: nexus-api
+    app: nexus-adm-api
 spec:
   selector:
     matchLabels:
-      app: nexus-api
+      app: nexus-adm-api
   template:
     metadata:
       labels:
-        app: nexus-api
+        app: nexus-adm-api
     spec:
-      imagePullSecrets:
-        - name: ghcr-secret
       containers:
-      - name: nexus-api-container
-        image: ghcr.io/synapsehealthtech/nexus-api:v0.1.13
-        imagePullPolicy: Always
-        command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+      - name: nexus-adm-api-container
+        image: nexus-adm-api:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
-        resources:
-          requests:
-            cpu: "75m"
-            memory: "96Mi"
-          limits:
-            cpu: "300m"
-            memory: "256Mi"
+#        resources:
+#          requests:
+#            cpu: "100m"
+#            memory: "128Mi"
         env:
         - name: NEXUS_CEP_URL
           value: "http://nexus-cep-service.nexus-cep.svc.cluster.local:80"
@@ -48,6 +42,8 @@ spec:
         - name: EMAILS_FROM_NAME
           value: "Nexus Platform"
         envFrom:
+        - configMapRef:
+            name: nexus-adm-api-config
         - secretRef:
             name: nexus-db-credentials
 #        # 1. Startup Probe: Dá tempo para a API iniciar e conectar ao banco.

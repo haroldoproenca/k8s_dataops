@@ -19,7 +19,7 @@ spec:
         - name: ghcr-secret
       containers:
       - name: nexus-api-container
-        image: ghcr.io/synapsehealthtech/nexus-api:v0.1.9
+        image: ghcr.io/synapsehealthtech/nexus-api:v0.1.13
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
@@ -34,6 +34,22 @@ spec:
         - secretRef:
             name: nexus-db-credentials
         env:
+        - name: NEXUS_CEP_URL
+          value: "http://nexus-cep-service.nexus-cep.svc.cluster.local:80"
+        - name: NEXUS_CEP_TOKEN
+          value: "change_this_to_a_secure_token"
+        - name: SMTP_HOST
+          value: "smtp.example.com"
+        - name: SMTP_PORT
+          value: "587"
+        - name: SMTP_USER
+          value: "user@example.com"
+        - name: SMTP_PASSWORD
+          value: "change_me"
+        - name: EMAILS_FROM_EMAIL
+          value: "noreply@nexusplatform.com.br"
+        - name: EMAILS_FROM_NAME
+          value: "Nexus Platform"
         - name: CORS_ORIGINS
           value: "https://amable.nexusplatform.com.br,https://amable-api.nexusplatform.com.br,http://localhost:5173"
 #        # 1. Startup Probe: Dá tempo para a API iniciar e conectar ao banco.

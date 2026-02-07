@@ -1,0 +1,15 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nexus-adm-api-service
+spec:
+  # 1. Altere o tipo para ClusterIP.
+  type: ClusterIP
+  selector:
+    app: nexus-adm-api
+  ports:
+  - protocol: TCP
+    # 2. A porta do serviço agora pode ser uma porta padrão, como a 80.
+    port: 80
+    targetPort: 8000 # Continua apontando para a porta 8000 do nosso contêiner.
