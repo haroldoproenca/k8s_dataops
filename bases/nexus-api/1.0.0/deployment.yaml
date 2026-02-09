@@ -44,6 +44,8 @@ spec:
         envFrom:
         - secretRef:
             name: nexus-db-credentials
+        - secretRef:
+            name: cloudflare-back-credentials
 #        # 1. Startup Probe: Dá tempo para a API iniciar e conectar ao banco.
 #        # O Kubernetes espera essa probe ter sucesso antes de iniciar as outras.
 #        startupProbe:

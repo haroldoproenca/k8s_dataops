@@ -18,7 +18,7 @@ spec:
         - name: ghcr-secret
       containers:
       - name: nexus-api-container
-        image: ghcr.io/synapsehealthtech/nexus-api:v0.1.13
+        image: ghcr.io/synapsehealthtech/nexus-api:v0.1.17
         imagePullPolicy: Always
         command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
         ports:
@@ -33,19 +33,21 @@ spec:
         envFrom:
         - secretRef:
             name: nexus-db-credentials
+        - secretRef:
+            name: cloudflare-back-credentials
         env:
         - name: NEXUS_CEP_URL
           value: "http://nexus-cep-service.nexus-cep.svc.cluster.local:80"
         - name: NEXUS_CEP_TOKEN
           value: "change_this_to_a_secure_token"
         - name: SMTP_HOST
-          value: "smtp.example.com"
+          value: "smtp.email.sa-saopaulo-1.oci.oraclecloud.com"
         - name: SMTP_PORT
           value: "587"
         - name: SMTP_USER
-          value: "user@example.com"
+          value: "ocid1.user.oc1..aaaaaaaakfesdhqpoapvxpu2wujs7q5byyfg42dlr73l4adlbcrxj6quly3q@ocid1.tenancy.oc1..aaaaaaaanbltruvjeyqnub4hkjwj6sunf3zfqfkyvl3s6tpuwicpcgjplpda.zc.com"
         - name: SMTP_PASSWORD
-          value: "change_me"
+          value: "74-Rt2O6cRFSU:ryC5)t"
         - name: EMAILS_FROM_EMAIL
           value: "noreply@nexusplatform.com.br"
         - name: EMAILS_FROM_NAME

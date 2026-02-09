@@ -16,8 +16,16 @@ spec:
         - name: ghcr-secret
       containers:
       - name: nexus-webapp-container
-        image: ghcr.io/synapsehealthtech/nexus-webapp:v0.1.12
+        image: ghcr.io/synapsehealthtech/nexus-webapp:v0.1.17
         imagePullPolicy: Always
+        envFrom:
+        - secretRef:
+            name: cloudflare-front-credentials
+        command: ["/bin/sh", "-c"]
+        args:
+          - >-
+            echo "window.env = { VITE_CLOUDFLARE_SITE_KEY: '$VITE_CLOUDFLARE_SITE_KEY' };" > /usr/share/nginx/html/config.js &&
+            nginx -g 'daemon off;'
         ports:
         - containerPort: 80
         resources:

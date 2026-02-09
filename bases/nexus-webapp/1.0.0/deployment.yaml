@@ -16,6 +16,14 @@ spec:
       - name: nexus-webapp-container
         image: nexus-webapp:latest
         imagePullPolicy: IfNotPresent
+        envFrom:
+        - secretRef:
+            name: cloudflare-front-credentials
+        command: ["/bin/sh", "-c"]
+        args:
+          - >-
+            echo "window.env = { VITE_CLOUDFLARE_SITE_KEY: '$VITE_CLOUDFLARE_SITE_KEY' };" > /usr/share/nginx/html/config.js &&
+            nginx -g 'daemon off;'
         ports:
         - containerPort: 80
         resources:
