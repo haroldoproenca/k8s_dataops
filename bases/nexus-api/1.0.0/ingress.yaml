@@ -7,7 +7,7 @@ metadata:
     # ATENÇÃO: Verifique se seu Ingress Controller é o da NGINX Inc. ou da Comunidade.
     # Se for o da comunidade, essas anotações 'nginx.org' serão ignoradas.
     nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "http://teste.nexusplatform.com.br"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://teste.nexusplatform.com.br"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, POST, DELETE, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
 spec:

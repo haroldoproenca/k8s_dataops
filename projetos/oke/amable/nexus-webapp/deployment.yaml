@@ -12,11 +12,13 @@ spec:
       labels:
         app: nexus-webapp
     spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
       imagePullSecrets:
         - name: ghcr-secret
       containers:
       - name: nexus-webapp-container
-        image: ghcr.io/synapsehealthtech/nexus-webapp:v0.1.17
+        image: ghcr.io/synapsehealthtech/nexus-webapp:v0.1.18
         imagePullPolicy: Always
         envFrom:
         - secretRef:

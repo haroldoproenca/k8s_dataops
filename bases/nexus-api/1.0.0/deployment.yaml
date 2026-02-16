@@ -25,6 +25,8 @@ spec:
 #            cpu: "100m"
 #            memory: "128Mi"
         env:
+        - name: CORS_ORIGINS
+          value: "https://teste.nexusplatform.com.br,https://teste-api.nexusplatform.com.br,http://localhost:5173"
         - name: NEXUS_CEP_URL
           value: "http://nexus-cep-service.nexus-cep.svc.cluster.local:80"
         - name: NEXUS_CEP_TOKEN
