@@ -66,27 +66,27 @@ spec:
       ttlSecondsAfterFinished: 3600
       template:
         spec:
+          imagePullSecrets:
+            - name: ghcr-secret
           serviceAccountName: backup-sa
           containers:
           - name: backup-worker
-            image: ghcr.io/synapsehealthtech/nexus-backup:v0.0.2
+            image: ghcr.io/synapsehealthtech/nexus-backup:v0.0.9
             imagePullPolicy: Always
+            envFrom:
+            - configMapRef:
+                name: backup-config
             env:
-            - name: DB_HOST
-              value: "mysql-service"
-            - name: DB_USER
-              value: "nexus_root_user"
-            - name: DB_PASS
+            - name: BACKUP_DB_PASS
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secrets
-                  key: root-password
-            - name: OCI_BUCKET_NAME
-              value: "nexus-backup"
-            
-            # Ajuste de performance
-            - name: MAX_WORKERS
-              value: "1"
+                  name: backup-db-secret
+                  key: password
+            # OCI Workload Identity (manual — webhook nem sempre injeta em CronJobs)
+            - name: OCI_RESOURCE_PRINCIPAL_VERSION
+              value: "2.2"
+            - name: OCI_RESOURCE_PRINCIPAL_REGION
+              value: "sa-saopaulo-1"
 
             #resources:
             #  requests:
@@ -99,19 +99,18 @@ spec:
             volumeMounts:
             - name: temp
               mountPath: /tmp
+            - name: oci-token
+              mountPath: /var/run/secrets/oci
+              readOnly: true
           
           restartPolicy: OnFailure
           volumes:
           - name: temp
             emptyDir: {}
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mysql-secrets
-  namespace: nexus-backup
-type: Opaque
-data:
-  # O valor abaixo deve ser a sua senha codificada em Base64
-  # Exemplo: 'minhasenha123' vira 'bWluaYXNlbmhhMTIz'
-  root-password: SEByMGxkMCE=
+          - name: oci-token
+            projected:
+              sources:
+              - serviceAccountToken:
+                  audience: oci
+                  expirationSeconds: 7200
+                  path: token

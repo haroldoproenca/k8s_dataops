@@ -44,6 +44,8 @@ spec:
         envFrom:
         - configMapRef:
             name: nexus-adm-api-config
+        - configMapRef:
+            name: nexus-adm-api-stripe-config
         - secretRef:
             name: nexus-db-credentials
 #        # 1. Startup Probe: Dá tempo para a API iniciar e conectar ao banco.

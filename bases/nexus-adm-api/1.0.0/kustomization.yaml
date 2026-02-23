@@ -13,6 +13,7 @@ resources:
 - mysql.yaml
 - mysql-service.yaml
 - pvc.yaml
+- stripe-configmap.yaml
 
 # Generate ConfigMap for non-sensitive data
 configMapGenerator:

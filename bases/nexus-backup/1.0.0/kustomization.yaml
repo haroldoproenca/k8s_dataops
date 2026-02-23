@@ -5,3 +5,5 @@ kind: Kustomization
 namespace: nexus-backup
 resources:
   - cronjob-full-backup.yaml
+  - configmap.yaml
+  - secrets.yaml

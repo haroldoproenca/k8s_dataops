@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-adm-api-stripe-config
+  namespace: nexus-adm-api
+data:
+  # Customer ID Override (optional, defaults to null/empty in app if not set here)
+  STRIPE_CUSTOMER_ID_OVERRIDE: "" 
+
+  # Price IDs (Defaults match the codebase, can be overridden here)
+  STRIPE_PRICE_STARTER_MONTHLY: "price_1T2K8vQdzWyGF4hnqHCLJRRZ"
+  STRIPE_PRICE_STARTER_YEARLY: "price_1T2K8vQdzWyGF4hnrmTKc6hK"
+  STRIPE_PRICE_GROWTH_MONTHLY: "price_1T2KBRQdzWyGF4hnsgJOhpcr"
+  STRIPE_PRICE_GROWTH_YEARLY: "price_1T2KBkQdzWyGF4hndfuhFsVn"
+  STRIPE_PRICE_ENTERPRISE_MONTHLY: "price_1T2KD9QdzWyGF4hnTUcaBYQm"
+  STRIPE_PRICE_ENTERPRISE_YEARLY: "price_1T2KDSQdzWyGF4hnI0GX4Xox"
