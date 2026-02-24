@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-backup-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nexus-backup-api
+  template:
+    metadata:
+      labels:
+        app: nexus-backup-api
+    spec:
+      serviceAccountName: nexus-backup-api-sa
+      containers:
+        - name: nexus-backup-api
+          image: ghcr.io/nexus/nexus-backup-api:latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: nexus-backup-api-env

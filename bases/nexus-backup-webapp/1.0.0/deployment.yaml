@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-backup-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nexus-backup-webapp
+  template:
+    metadata:
+      labels:
+        app: nexus-backup-webapp
+    spec:
+      containers:
+        - name: nexus-backup-webapp
+          image: ghcr.io/nexus/nexus-backup-webapp:latest
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: nexus-backup-webapp-config
