@@ -1,21 +1,56 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: nexus-backup-api
+  name: nexus-backup-api-ingress
   annotations:
-    kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "https://backup.nexusplatform.com.br"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # ATENÇÃO: Verifique se seu Ingress Controller é o da NGINX Inc. ou da Comunidade.
+    # Se for o da comunidade, essas anotações 'nginx.org' serão ignoradas.
     nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://backup.nexusplatform.com.br"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
 spec:
+  ingressClassName: nginx
+  
+  # CORREÇÃO: O bloco TLS foi movido para cá (raiz do spec)
+  tls:
+  - hosts:
+    - backup-api.nexusplatform.com.br
+    secretName: backup-api-tls-secret
+
   rules:
-    - host: backup-api.nexusplatform.com.br
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: nexus-backup-api
-                port:
-                  number: 80
+  - host: backup-api.nexusplatform.com.br
+    http:
+      paths:
+      # [Regra Principal da API]
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nexus-backup-api
+            port:
+              number: 80
+
+      # [Rotas de Documentação]
+      - path: /docs
+        pathType: Prefix
+        backend:
+          service:
+            name: nexus-backup-api
+            port:
+              number: 80
+      - path: /redoc
+        pathType: Prefix
+        backend:
+          service:
+            name: nexus-backup-api
+            port:
+              number: 80
+      - path: /openapi.json
+        pathType: Prefix
+        backend:
+          service:
+            name: nexus-backup-api
+            port:
+              number: 80

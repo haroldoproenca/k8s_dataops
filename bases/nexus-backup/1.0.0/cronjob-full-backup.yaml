@@ -71,7 +71,7 @@ spec:
           serviceAccountName: backup-sa
           containers:
           - name: backup-worker
-            image: ghcr.io/synapsehealthtech/nexus-backup:v0.0.9
+            image: ghcr.io/synapsehealthtech/nexus-backup:v0.0.10
             imagePullPolicy: Always
             envFrom:
             - configMapRef:

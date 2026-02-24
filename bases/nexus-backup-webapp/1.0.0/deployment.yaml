@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: nexus-backup-webapp
-          image: ghcr.io/nexus/nexus-backup-webapp:latest
+          image: ghcr.io/nexus/nexus-backup-webapp:v0.0.3
           ports:
             - containerPort: 80
           envFrom:

@@ -1,18 +1,26 @@
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: nexus-backup-webapp
   annotations:
-    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
+  ingressClassName: nginx
+  # O bloco TLS fica aqui, na raiz de 'spec'
+  tls:
+  - hosts:
+    - backup.nexusplatform.com.br
+    secretName: backup-tls-secret
+  
   rules:
-    - host: backup.nexusplatform.com.br
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: nexus-backup-webapp
-                port:
-                  number: 80
+  - host: backup.nexusplatform.com.br
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nexus-backup-webapp
+            port:
+              number: 80

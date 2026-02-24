@@ -15,7 +15,7 @@ spec:
       serviceAccountName: nexus-backup-api-sa
       containers:
         - name: nexus-backup-api
-          image: ghcr.io/nexus/nexus-backup-api:latest
+          image: ghcr.io/nexus/nexus-backup-api:v0.0.3
           ports:
             - containerPort: 8000
           envFrom:

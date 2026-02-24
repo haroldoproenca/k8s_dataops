@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-backup-webapp-config
+data:
+  # MOCK: Variaveis de ambiente para o frontend (Vite as consumira no build/runtime se importadas corretamente,
+  # ou podem ser servidas via env.js dinâmico no Nginx)
+  VITE_API_URL: "https://backup-api.nexusplatform.com.br"
+  VITE_APP_ENV: "production"
