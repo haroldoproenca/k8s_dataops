@@ -20,7 +20,7 @@ spec:
         - name: ghcr-secret
       containers:
       - name: nexus-api-container
-        image: ghcr.io/synapsehealthtech/nexus-api:v0.1.31
+        image: ghcr.io/synapsehealthtech/nexus-api:v0.1.32
         imagePullPolicy: Always
         command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
         ports:
