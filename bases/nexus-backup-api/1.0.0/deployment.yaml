@@ -12,10 +12,12 @@ spec:
       labels:
         app: nexus-backup-api
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       serviceAccountName: nexus-backup-api-sa
       containers:
         - name: nexus-backup-api
-          image: ghcr.io/nexus/nexus-backup-api:v0.0.3
+          image: ghcr.io/synapsehealthtech/nexus-backup-api:v0.0.3
           ports:
             - containerPort: 8000
           envFrom:

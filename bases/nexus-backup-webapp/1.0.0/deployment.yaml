@@ -12,9 +12,11 @@ spec:
       labels:
         app: nexus-backup-webapp
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: nexus-backup-webapp
-          image: ghcr.io/nexus/nexus-backup-webapp:v0.0.3
+          image: ghcr.io/synapsehealthtech/nexus-backup-webapp:v0.0.4
           ports:
             - containerPort: 80
           envFrom:
