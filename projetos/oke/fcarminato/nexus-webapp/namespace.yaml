@@ -2,4 +2,4 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: nexus-api-amableteste
+  name: nexus-webapp-fcarminato

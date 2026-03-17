@@ -18,7 +18,7 @@ spec:
         - name: ghcr-secret
       containers:
       - name: nexus-webapp-container
-        image: ghcr.io/synapsehealthtech/nexus-webapp:v0.1.57
+        image: ghcr.io/synapsehealthtech/nexus-webapp:v0.2.3
         imagePullPolicy: Always
         envFrom:
         - secretRef:
@@ -26,7 +26,7 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
           - >-
-            echo "window.env = { VITE_API_URL: '$VITE_API_URL', VITE_CLOUDFLARE_SITE_KEY: '$VITE_CLOUDFLARE_SITE_KEY' };" > /usr/share/nginx/html/config.js &&
+            echo "window.env = { VITE_CLOUDFLARE_SITE_KEY: '$VITE_CLOUDFLARE_SITE_KEY', VITE_API_URL: '$VITE_API_URL' };" > /usr/share/nginx/html/config.js &&
             nginx -g 'daemon off;'
         ports:
         - containerPort: 80

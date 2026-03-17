@@ -20,7 +20,7 @@ spec:
         - name: ghcr-secret
       containers:
       - name: nexus-api-container
-        image: ghcr.io/synapsehealthtech/nexus-api:v0.1.42
+        image: ghcr.io/synapsehealthtech/nexus-api:v0.2.3
         imagePullPolicy: Always
         command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
         ports:
@@ -34,9 +34,9 @@ spec:
             memory: "256Mi"
         env:
         - name: FRONTEND_URL
-          value: "https://amableteste.nexusplatform.com.br"
+          value: "https://fcarminato.nexusplatform.com.br"
         - name: CORS_ORIGINS
-          value: "https://amableteste.nexusplatform.com.br,https://amableteste-api.nexusplatform.com.br,http://localhost:5173"
+          value: "https://fcarminato.nexusplatform.com.br,https://fcarminato-api.nexusplatform.com.br,http://localhost:5173"
         - name: NEXUS_CEP_URL
           value: "http://nexus-cep-service.nexus-cep.svc.cluster.local:80"
         - name: NEXUS_CEP_TOKEN

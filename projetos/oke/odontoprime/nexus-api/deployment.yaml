@@ -21,7 +21,7 @@ spec:
         - name: ghcr-secret
       containers:
       - name: nexus-api-container
-        image: ghcr.io/synapsehealthtech/nexus-api:v0.2.2
+        image: ghcr.io/synapsehealthtech/nexus-api:v0.2.3
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
