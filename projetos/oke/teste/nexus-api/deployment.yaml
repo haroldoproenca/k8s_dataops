@@ -20,7 +20,7 @@ spec:
         - name: ghcr-secret
       containers:
       - name: nexus-api-container
-        image: ghcr.io/synapsehealthtech/nexus-api:v0.1.32
+        image: ghcr.io/synapsehealthtech/nexus-api:v0.2.2
         imagePullPolicy: Always
         command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
         ports:
@@ -33,6 +33,8 @@ spec:
             cpu: "300m"
             memory: "256Mi"
         env:
+        - name: FRONTEND_URL
+          value: "https://teste.nexusplatform.com.br"
         - name: CORS_ORIGINS
           value: "https://teste.nexusplatform.com.br,https://teste-api.nexusplatform.com.br,http://localhost:5173"
         - name: NEXUS_CEP_URL

@@ -1,3 +1,4 @@
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -22,7 +23,6 @@ spec:
       - name: nexus-api-container
         image: ghcr.io/synapsehealthtech/nexus-api:v0.2.2
         imagePullPolicy: Always
-        command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
         ports:
         - containerPort: 8000
         resources:
@@ -39,7 +39,7 @@ spec:
             name: cloudflare-back-credentials
         env:
         - name: FRONTEND_URL
-          value: "https://nexusone.nexusplatform.com.br"
+          value: "https://odontoprime.nexusplatform.com.br"
         - name: NEXUS_CEP_URL
           value: "http://nexus-cep-service.nexus-cep.svc.cluster.local:80"
         - name: NEXUS_CEP_TOKEN
@@ -57,7 +57,7 @@ spec:
         - name: EMAILS_FROM_NAME
           value: "Nexus Platform"
         - name: CORS_ORIGINS
-          value: "https://nexusone.nexusplatform.com.br,https://nexusone-api.nexusplatform.com.br,http://localhost:5173"
+          value: "https://odontoprime.nexusplatform.com.br,https://odontoprime-api.nexusplatform.com.br,http://localhost:5173,*"
 #        # 1. Startup Probe: Dá tempo para a API iniciar e conectar ao banco.
 #        # O Kubernetes espera essa probe ter sucesso antes de iniciar as outras.
 #        startupProbe:

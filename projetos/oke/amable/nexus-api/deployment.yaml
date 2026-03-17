@@ -21,7 +21,7 @@ spec:
         - name: ghcr-secret
       containers:
       - name: nexus-api-container
-        image: ghcr.io/synapsehealthtech/nexus-api:v0.1.19
+        image: ghcr.io/synapsehealthtech/nexus-api:v0.1.44
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
@@ -38,6 +38,8 @@ spec:
         - secretRef:
             name: cloudflare-back-credentials
         env:
+        - name: FRONTEND_URL
+          value: "https://amable.nexusplatform.com.br"
         - name: NEXUS_CEP_URL
           value: "http://nexus-cep-service.nexus-cep.svc.cluster.local:80"
         - name: NEXUS_CEP_TOKEN
@@ -55,7 +57,7 @@ spec:
         - name: EMAILS_FROM_NAME
           value: "Nexus Platform"
         - name: CORS_ORIGINS
-          value: "https://amable.nexusplatform.com.br,https://amable-api.nexusplatform.com.br,http://localhost:5173,https://teste.nexusplatform.com.br,https://teste-api.nexusplatform.com.br,*"
+          value: "https://amable.nexusplatform.com.br,https://amable-api.nexusplatform.com.br,http://localhost:5173,*"
 #        # 1. Startup Probe: Dá tempo para a API iniciar e conectar ao banco.
 #        # O Kubernetes espera essa probe ter sucesso antes de iniciar as outras.
 #        startupProbe:

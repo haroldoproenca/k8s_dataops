@@ -1,19 +1,23 @@
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: nexus-webapp-ingress
+  name: nexus-webapp-ingress-teste
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    external-dns.alpha.kubernetes.io/hostname: teste-dns2.nexusplatform.com.br
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    external-dns.alpha.kubernetes.io/target: "137.131.208.26"
 spec:
   ingressClassName: nginx
   # O bloco TLS fica aqui, na raiz de 'spec'
   tls:
   - hosts:
-    - teste.nexusplatform.com.br
-    secretName: teste-tls-secret
+    - teste-dns2.nexusplatform.com.br
+    secretName: teste-dns-tls-secret
   
   rules:
-  - host: teste.nexusplatform.com.br
+  - host: teste-dns2.nexusplatform.com.br
     http:
       paths:
       - path: /

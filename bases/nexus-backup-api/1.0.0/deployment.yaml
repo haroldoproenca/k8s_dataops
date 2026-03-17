@@ -23,3 +23,20 @@ spec:
           envFrom:
             - secretRef:
                 name: nexus-backup-api-env
+          env:
+            - name: OCI_RESOURCE_PRINCIPAL_VERSION
+              value: "2.2"
+            - name: OCI_RESOURCE_PRINCIPAL_REGION
+              value: "sa-saopaulo-1"
+          volumeMounts:
+            - name: oci-token
+              mountPath: /var/run/secrets/oci
+              readOnly: true
+      volumes:
+        - name: oci-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: oci
+                  expirationSeconds: 7200
+                  path: token

@@ -66,12 +66,14 @@ spec:
       ttlSecondsAfterFinished: 3600
       template:
         spec:
+          nodeSelector:
+            kubernetes.io/arch: arm64
           imagePullSecrets:
             - name: ghcr-secret
           serviceAccountName: backup-sa
           containers:
           - name: backup-worker
-            image: ghcr.io/synapsehealthtech/nexus-backup:v0.0.10
+            image: ghcr.io/synapsehealthtech/nexus-backup:v0.0.11
             imagePullPolicy: Always
             envFrom:
             - configMapRef:

@@ -2,6 +2,8 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: nexus-backup-api-sa
+  annotations:
+    oci.oraclecloud.com/oci-use-workload-identity: "true"
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

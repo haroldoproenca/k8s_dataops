@@ -14,6 +14,9 @@ resources:
 - mysql-service.yaml
 - pvc.yaml
 - stripe-configmap.yaml
+- serviceaccount.yaml
+- clusterrole.yaml
+- clusterrolebinding.yaml
 
 # Generate ConfigMap for non-sensitive data
 configMapGenerator:
@@ -24,6 +27,7 @@ configMapGenerator:
   - EMAILS_FROM_EMAIL=noreply@nexusplatform.com.br
   - EMAILS_FROM_NAME="Nexus Platform"
   - CORS_ORIGINS="http://localhost:5173,https://admin.nexusplatform.com.br,https://console.nexusplatform.com.br"
+  - MYSQL_HOST=mysql
   name: nexus-adm-api-config
 
 # Generate Secret for sensitive data (Placeholders for Base)
@@ -32,7 +36,7 @@ secretGenerator:
   - NEXUS_CEP_TOKEN=change_this_to_a_secure_token
   - SMTP_USER=change_me
   - SMTP_PASSWORD=change_me
-  - STRIPE_API_KEY=change_me
-  - STRIPE_WEBHOOK_SECRET=change_me
+  - MYSQL_ROOT_USER=root
+  - MYSQL_ROOT_PASS=User_password_segura#1
   name: nexus-adm-api-secrets
 

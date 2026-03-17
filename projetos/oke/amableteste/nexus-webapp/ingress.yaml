@@ -9,11 +9,11 @@ spec:
   # O bloco TLS fica aqui, na raiz de 'spec'
   tls:
   - hosts:
-    - teste.nexusplatform.com.br
-    secretName: teste-tls-secret
+    - amableteste.nexusplatform.com.br
+    secretName: amableteste-tls-secret
   
   rules:
-  - host: teste.nexusplatform.com.br
+  - host: amableteste.nexusplatform.com.br
     http:
       paths:
       - path: /

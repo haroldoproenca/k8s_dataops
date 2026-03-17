@@ -6,3 +6,4 @@ namespace: nexus-webapp
 
 resources:
 - ../../../bases/nexus-webapp/1.0.0
+- ingress.yaml
