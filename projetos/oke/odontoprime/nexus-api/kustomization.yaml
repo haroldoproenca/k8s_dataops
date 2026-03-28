@@ -5,9 +5,10 @@ kind: Kustomization
 namespace: nexus-api-odontoprime
 
 resources:
-- ../../../../bases/nexus-api/1.0.0
-#- secret.yaml
+- ../../../../bases/nexus-api/1.0.0gw
+- httproute.yaml
+
 patches:
 - path: secret.yaml
+- path: configmap.yaml
 - path: deployment.yaml
-- path: ingress.yaml

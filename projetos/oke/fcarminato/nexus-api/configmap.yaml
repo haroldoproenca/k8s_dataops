@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-api-config
+data:
+  FRONTEND_URL: "https://fcarminato.nexusplatform.com.br"
+  CORS_ORIGINS: "https://fcarminato.nexusplatform.com.br,https://fcarminato-api.nexusplatform.com.br,http://localhost:5173"

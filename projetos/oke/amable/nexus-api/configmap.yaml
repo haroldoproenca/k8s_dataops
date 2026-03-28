@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-api-config
+data:
+  FRONTEND_URL: "https://amable.nexusplatform.com.br"
+  CORS_ORIGINS: "https://amable.nexusplatform.com.br,https://amable-api.nexusplatform.com.br,http://localhost:5173,*"
