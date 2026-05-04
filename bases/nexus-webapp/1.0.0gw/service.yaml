@@ -1,0 +1,13 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nexus-webapp-service
+spec:
+  type: ClusterIP # Só precisa ser acessível de dentro do cluster pelo Ingress
+  selector:
+    app: nexus-webapp
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80

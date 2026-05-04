@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nexus-adm-api-clusterrolebinding
+subjects:
+- kind: ServiceAccount
+  name: nexus-adm-api-sa
+  namespace: nexus-adm-api
+roleRef:
+  kind: ClusterRole
+  name: nexus-adm-api-clusterrole
+  apiGroup: rbac.authorization.k8s.io

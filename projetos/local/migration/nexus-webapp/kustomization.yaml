@@ -1,0 +1,11 @@
+# minha-app/base/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nexus-webapp-migration
+
+resources:
+- ../../../../bases/nexus-webapp/1.0.0gw
+- httproute.yaml
+- certificate.yaml
+- certificate-dns2.yaml

@@ -1,0 +1,27 @@
+# Strategic merge patch — agents-api para produção OKE
+# ARM64 (OCI Ampere A1), imagem com tag semântica, 2 réplicas.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agents-api-deployment
+spec:
+  replicas: 2
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: agents-api-container
+          # Substituir pelo registry real: ghcr.io/<sua-org>/nexus-agenticops:v2.0.0
+          image: ghcr.io/YOUR_ORG/nexus-agenticops:v2.0.0
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

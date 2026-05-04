@@ -1,0 +1,16 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nexus-api-route
+  namespace: nexus-api
+spec:
+  parentRefs:
+  - name: nexus-gateway
+    namespace: nginx-gateway
+    sectionName: https
+  hostnames:
+  - teste-api.nexusplatform.com.br
+  rules:
+  - backendRefs:
+    - name: nexus-api-service
+      port: 80

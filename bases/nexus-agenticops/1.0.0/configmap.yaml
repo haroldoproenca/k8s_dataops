@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-agenticops-config
+data:
+  # API
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  # LiteLLM gateway — todos os agentes apontam aqui, nunca direto ao provedor
+  LITELLM_BASE_URL: "http://litellm-service:4000/v1"
+  LITELLM_MASTER_KEY: "sk-placeholder-master-key"
+  # Postgres
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "nexus_agents"
+  POSTGRES_USER: "postgres"
+  # Celery
+  CELERY_BROKER_URL: "redis://:nexusredis@redis-service:6379/0"
+  CELERY_RESULT_BACKEND: "redis://:nexusredis@redis-service:6379/1"
+  CELERY_WORKER_POOL: "gevent"
+  CELERY_WORKER_CONCURRENCY: "100"
+  # Langfuse
+  LANGFUSE_HOST: "http://langfuse-web-service:3000"
+  # Langflow
+  LANGFLOW_URL: "http://langflow-service:7860"

@@ -1,0 +1,63 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: litellm-deployment
+  labels:
+    app: litellm
+    component: agenticops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: litellm
+  template:
+    metadata:
+      labels:
+        app: litellm
+        component: agenticops
+    spec:
+      containers:
+        - name: litellm-container
+          image: ghcr.io/berriai/litellm:main-latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4000
+          command: ["--config", "/app/config.yaml", "--port", "4000"]
+          volumeMounts:
+            - name: litellm-config-vol
+              mountPath: /app/config.yaml
+              subPath: config.yaml
+          envFrom:
+            - secretRef:
+                name: nexus-agenticops-secrets
+          env:
+            - name: LANGFUSE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-agenticops-config
+                  key: LANGFUSE_HOST
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+      volumes:
+        - name: litellm-config-vol
+          configMap:
+            name: litellm-config

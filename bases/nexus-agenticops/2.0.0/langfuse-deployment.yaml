@@ -1,0 +1,234 @@
+---
+# Langfuse Web — UI + API REST (observabilidade de agentes)
+# Rastreia: AGENT/GENERATION/RETRIEVER/GUARDRAIL spans, custo por agente, ModelRetry rate.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: langfuse-web-deployment
+  labels:
+    app: langfuse-web
+    component: agenticops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: langfuse-web
+  template:
+    metadata:
+      labels:
+        app: langfuse-web
+        component: agenticops
+    spec:
+      containers:
+        - name: langfuse-web-container
+          image: langfuse/langfuse:3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: DATABASE_URL_SYNC
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: NEXTAUTH_SECRET
+            - name: SALT
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: LANGFUSE_ENCRYPTION_KEY
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: LANGFUSE_ENCRYPTION_KEY
+            # Sobrescrito no overlay com a URL pública (HTTPS)
+            - name: NEXTAUTH_URL
+              value: "http://langfuse-web-service:3000"
+            - name: TELEMETRY_ENABLED
+              value: "false"
+            - name: LANGFUSE_INIT_ORG_ID
+              value: "nexus"
+            - name: LANGFUSE_INIT_ORG_NAME
+              value: "Nexus AgenticOps"
+            - name: LANGFUSE_INIT_PROJECT_ID
+              value: "nexus-agents"
+            - name: LANGFUSE_INIT_PROJECT_NAME
+              value: "nexus-agents"
+            - name: LANGFUSE_INIT_PROJECT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: LANGFUSE_PUBLIC_KEY
+            - name: LANGFUSE_INIT_PROJECT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: LANGFUSE_SECRET_KEY
+            # ClickHouse — obrigatório no Langfuse v3
+            - name: CLICKHOUSE_URL
+              value: "http://clickhouse-service:8123"
+            - name: CLICKHOUSE_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-agenticops-config
+                  key: CLICKHOUSE_USER
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: CLICKHOUSE_PASSWORD
+            # Langfuse v3 — S3/MinIO para Payload Store de eventos
+            - name: LANGFUSE_S3_EVENT_UPLOAD_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-agenticops-config
+                  key: LANGFUSE_S3_EVENT_UPLOAD_BUCKET
+            - name: LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-agenticops-config
+                  key: LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT
+            - name: LANGFUSE_S3_EVENT_UPLOAD_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-agenticops-config
+                  key: LANGFUSE_S3_EVENT_UPLOAD_REGION
+            - name: LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-agenticops-config
+                  key: LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE
+            - name: LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: MINIO_ACCESS_KEY
+            - name: LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: MINIO_SECRET_KEY
+          livenessProbe:
+            httpGet:
+              path: /api/public/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+# Langfuse Worker — processa eventos de traces de forma assíncrona via Redis
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: langfuse-worker-deployment
+  labels:
+    app: langfuse-worker
+    component: agenticops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: langfuse-worker
+  template:
+    metadata:
+      labels:
+        app: langfuse-worker
+        component: agenticops
+    spec:
+      containers:
+        - name: langfuse-worker-container
+          image: langfuse/langfuse-worker:3
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: DATABASE_URL_SYNC
+            - name: SALT
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: LANGFUSE_ENCRYPTION_KEY
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: LANGFUSE_ENCRYPTION_KEY
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-agenticops-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-agenticops-config
+                  key: REDIS_PORT
+            - name: REDIS_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: REDIS_PASSWORD
+            # ClickHouse — obrigatório no Langfuse v3
+            - name: CLICKHOUSE_URL
+              value: "http://clickhouse-service:8123"
+            - name: CLICKHOUSE_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-agenticops-config
+                  key: CLICKHOUSE_USER
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: CLICKHOUSE_PASSWORD
+            # Langfuse v3 — S3/MinIO para Payload Store de eventos
+            - name: LANGFUSE_S3_EVENT_UPLOAD_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-agenticops-config
+                  key: LANGFUSE_S3_EVENT_UPLOAD_BUCKET
+            - name: LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-agenticops-config
+                  key: LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT
+            - name: LANGFUSE_S3_EVENT_UPLOAD_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-agenticops-config
+                  key: LANGFUSE_S3_EVENT_UPLOAD_REGION
+            - name: LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-agenticops-config
+                  key: LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE
+            - name: LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: MINIO_ACCESS_KEY
+            - name: LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: MINIO_SECRET_KEY
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"

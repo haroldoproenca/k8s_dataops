@@ -5,9 +5,9 @@ kind: Kustomization
 namespace: nexus-webapp-odontoprime
 
 resources:
-- ../../../../bases/nexus-webapp/1.0.0
+- ../../../../bases/nexus-webapp/1.0.0gw
+- httproute.yaml
+
 patches:
-- path: deployment.yaml
 - path: secret.yaml
-- path: ingress.yaml
-#- path: service.yaml
+- path: deployment.yaml

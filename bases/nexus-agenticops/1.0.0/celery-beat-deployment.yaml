@@ -1,0 +1,39 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-beat-deployment
+  labels:
+    app: celery-beat
+spec:
+  replicas: 1   # Beat scheduler deve ter sempre 1 réplica
+  selector:
+    matchLabels:
+      app: celery-beat
+  template:
+    metadata:
+      labels:
+        app: celery-beat
+    spec:
+      containers:
+        - name: celery-beat-container
+          image: nexus-agenticops:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - celery
+            - -A
+            - tasks.agent_tasks
+            - beat
+            - --loglevel=info
+          envFrom:
+            - configMapRef:
+                name: nexus-agenticops-config
+            - secretRef:
+                name: nexus-agenticops-secrets
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"

@@ -1,0 +1,73 @@
+# Strategic merge patch — LiteLLM config para produção OKE
+# Modelos cloud (OpenAI/Anthropic) com failover automático.
+# Secrets injetados via OCI Vault + External Secrets Operator — nunca hardcoded.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litellm-config
+data:
+  config.yaml: |
+    model_list:
+      # agente-padrao: custo-benefício, 2 deployments = failover automático
+      - model_name: agente-padrao
+        litellm_params:
+          model: openai/gpt-4o-mini
+          api_key: "os.environ/OPENAI_API_KEY"
+          rpm: 3000
+          timeout: 300
+
+      - model_name: agente-padrao
+        litellm_params:
+          model: anthropic/claude-haiku-4-5-20251001
+          api_key: "os.environ/ANTHROPIC_API_KEY"
+          rpm: 2000
+          timeout: 300
+
+      # agente-rapido: roteador e tarefas simples
+      - model_name: agente-rapido
+        litellm_params:
+          model: openai/gpt-4o-mini
+          api_key: "os.environ/OPENAI_API_KEY"
+          rpm: 5000
+          timeout: 120
+
+      # agente-premium: análise complexa, documentos longos, baixa confiança recorrente
+      - model_name: agente-premium
+        litellm_params:
+          model: anthropic/claude-sonnet-4-6
+          api_key: "os.environ/ANTHROPIC_API_KEY"
+          rpm: 500
+          timeout: 600
+
+      - model_name: agente-premium
+        litellm_params:
+          model: openai/gpt-4o
+          api_key: "os.environ/OPENAI_API_KEY"
+          rpm: 480
+          timeout: 600
+
+    router_settings:
+      routing_strategy: "lowest_cost"
+      num_retries: 1
+      fallbacks:
+        - {"agente-padrao": ["agente-premium"]}
+        - {"agente-rapido": ["agente-padrao"]}
+
+    general_settings:
+      master_key: "os.environ/LITELLM_MASTER_KEY"
+      database_url: "os.environ/DATABASE_URL_SYNC"
+      store_model_in_db: true
+      cache: true
+      cache_params:
+        type: "redis-semantic"
+        similarity_threshold: 0.95
+        host: "redis-service"
+        port: 6379
+        password: "os.environ/REDIS_PASSWORD"
+      success_callback: ["langfuse"]
+      failure_callback: ["langfuse"]
+
+    environment_variables:
+      LANGFUSE_PUBLIC_KEY: "os.environ/LANGFUSE_PUBLIC_KEY"
+      LANGFUSE_SECRET_KEY: "os.environ/LANGFUSE_SECRET_KEY"
+      LANGFUSE_HOST: "https://agenticops-langfuse.nexusplatform.com.br"

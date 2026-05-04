@@ -1,0 +1,48 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nginx-gateway-proxy-hpa
+  namespace: nginx-gateway
+  labels:
+    app.kubernetes.io/name: nginx-gateway
+    app.kubernetes.io/instance: nginx-gateway
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nginx-gateway-nginx
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+  # Métrica principal: CPU (proxy reverso escala bem com CPU)
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # Escala quando CPU média > 70%
+  # Métrica secundária: Memória (para detectar memory leaks ou alto volume de conexões)
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80  # Escala quando memória média > 80%
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60  # Aguarda 1min antes de escalar up
+      policies:
+      - type: Percent
+        value: 100  # Dobra o número de pods por vez (2→4)
+        periodSeconds: 60
+      - type: Pods
+        value: 1    # Ou adiciona 1 pod por vez (mais conservador)
+        periodSeconds: 60
+      selectPolicy: Max  # Usa a política mais agressiva
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Aguarda 5min antes de escalar down (evita flapping)
+      policies:
+      - type: Percent
+        value: 50  # Remove no máximo 50% dos pods por vez
+        periodSeconds: 120
+      selectPolicy: Min  # Usa a política mais conservadora

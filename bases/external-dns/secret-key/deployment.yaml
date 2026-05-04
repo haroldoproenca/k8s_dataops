@@ -54,15 +54,15 @@ spec:
                   name: cloudflare-api-key
           args:
             - --annotation-filter=external-dns.alpha.kubernetes.io/hostname
-            - --log-level=info
+            - --log-level=debug
             - --log-format=text
             - --interval=1m
             - --source=service
             - --source=ingress
+            - --source=gateway-httproute
             - --policy=upsert-only
             - --registry=txt
             - --provider=cloudflare
-            - --source=ingress
             - --ingress-class=nginx
           ports:
             - name: http

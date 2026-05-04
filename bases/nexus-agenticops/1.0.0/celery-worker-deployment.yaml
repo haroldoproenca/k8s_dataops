@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-worker-deployment
+  labels:
+    app: celery-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: celery-worker
+  template:
+    metadata:
+      labels:
+        app: celery-worker
+    spec:
+      containers:
+        - name: celery-worker-container
+          image: nexus-agenticops:latest
+          imagePullPolicy: IfNotPresent
+          # worker_pool=gevent: alta concorrência para I/O bound (chamadas HTTP ao LiteLLM)
+          # -Q llm_agents: fila dedicada para tasks de LLM
+          # prefetch_multiplier=1: configurado no celeryconfig.py
+          command:
+            - celery
+            - -A
+            - tasks.agent_tasks
+            - worker
+            - -Q
+            - llm_agents
+            - -P
+            - gevent
+            - -c
+            - "100"
+            - --loglevel=info
+          envFrom:
+            - configMapRef:
+                name: nexus-agenticops-config
+            - secretRef:
+                name: nexus-agenticops-secrets
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"

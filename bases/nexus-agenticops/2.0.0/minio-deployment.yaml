@@ -1,0 +1,79 @@
+---
+# MinIO — Payload Offloading para AgentState.
+#
+# Regra fundamental: AgentState nunca carrega bytes ou strings > ~5KB.
+# O nó do grafo recebe apenas a URI (s3://nexus-agents/docs/task_id/file.pdf)
+# e baixa o documento sob demanda via MinIOClient.download_text(uri).
+#
+# Em produção OKE: escalar para replicas: 0 e usar OCI Object Storage (S3-compatível).
+# O MinIOClient no Python funciona com ambos sem alteração de código.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio-deployment
+  labels:
+    app: minio
+    component: agenticops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+        component: agenticops
+    spec:
+      containers:
+        - name: minio-container
+          image: minio/minio:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - minio
+            - server
+            - /data
+            - --console-address
+            - ":9001"
+          ports:
+            - containerPort: 9000
+              name: api
+            - containerPort: 9001
+              name: console
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: MINIO_ACCESS_KEY
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: MINIO_SECRET_KEY
+          volumeMounts:
+            - name: minio-storage
+              mountPath: /data
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: 9000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "512Mi"
+      volumes:
+        - name: minio-storage
+          persistentVolumeClaim:
+            claimName: minio-pvc

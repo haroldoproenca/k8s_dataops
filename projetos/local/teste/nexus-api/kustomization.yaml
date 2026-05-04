@@ -1,0 +1,18 @@
+# minha-app/base/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nexus-api
+
+resources:
+- ../../../../bases/nexus-api/1.0.0gw
+- mysql.yaml
+- httproute.yaml
+- certificate.yaml
+- certificate-api.yaml
+- reference-grant.yaml
+
+patches:
+- path: configmap.yaml
+
+

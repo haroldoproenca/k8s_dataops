@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-adm-api-deployment
+  labels:
+    app: nexus-adm-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nexus-adm-api
+  template:
+    metadata:
+      labels:
+        app: nexus-adm-api
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+      - name: nexus-adm-api-container
+        image: ghcr.io/synapsehealthtech/nexus-adm-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        env:
+        - name: FRONTEND_URL
+          value: "https://console.nexusplatform.com.br"
+        - name: CORS_ORIGINS
+          value: "https://console.nexusplatform.com.br,https://nexus-adm-api.nexusplatform.com.br,http://localhost:5173"
+        - name: NEXUS_CEP_URL
+          value: "http://nexus-cep-service.nexus-cep.svc.cluster.local:80"
+        - name: SMTP_HOST
+          value: "smtp.email.sa-saopaulo-1.oci.oraclecloud.com"
+        - name: SMTP_PORT
+          value: "587"
+        - name: EMAILS_FROM_EMAIL
+          value: "noreply@nexusplatform.com.br"
+        - name: EMAILS_FROM_NAME
+          value: "Nexus Admin Platform"
+        - name: MYSQL_HOST
+          value: "mysql"
+        envFrom:
+        - secretRef:
+            name: nexus-adm-api-secrets
+        - configMapRef:
+            name: nexus-adm-api-config
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3

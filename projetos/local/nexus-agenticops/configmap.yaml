@@ -1,0 +1,17 @@
+# Strategic merge patch — valores específicos do ambiente local (K3d)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-agenticops-config
+data:
+  # Langfuse acessível pelo hostname público local
+  LANGFUSE_HOST: "https://agenticops-langfuse.nexusplatform.com.br"
+
+  # URLs públicas para CORS e referência interna
+  CORS_ORIGINS: "https://agenticops-api.nexusplatform.com.br,http://localhost:3000,http://localhost:8000"
+
+  # MinIO local (ClusterIP do K3d)
+  MINIO_ENDPOINT: "minio-service:9000"
+  MINIO_SECURE: "false"
+
+  ENVIRONMENT: "local"

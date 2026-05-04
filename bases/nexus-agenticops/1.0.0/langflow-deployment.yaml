@@ -1,0 +1,52 @@
+---
+# Langflow — prototipagem visual de fluxos de agentes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: langflow-deployment
+  labels:
+    app: langflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: langflow
+  template:
+    metadata:
+      labels:
+        app: langflow
+    spec:
+      containers:
+        - name: langflow-container
+          image: langflowai/langflow:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 7860
+          env:
+            - name: LANGFLOW_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: DATABASE_URL_SYNC
+            - name: LANGFLOW_CACHE_TYPE
+              value: "redis"
+            - name: LANGFLOW_REDIS_URL
+              value: "redis://:$(REDIS_PASSWORD)@redis-service:6379/3"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: REDIS_PASSWORD
+            - name: LANGFLOW_REMOVE_API_KEYS
+              value: "true"
+            - name: LANGFLOW_MCP_COMPOSER_ENABLED
+              value: "true"
+            - name: LANGFLOW_AUTO_LOGIN
+              value: "true"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"

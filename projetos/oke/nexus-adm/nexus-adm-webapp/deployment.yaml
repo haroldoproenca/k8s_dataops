@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-adm-webapp-deployment
+  labels:
+    app: nexus-adm-webapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nexus-adm-webapp
+  template:
+    metadata:
+      labels:
+        app: nexus-adm-webapp
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+      - name: nexus-adm-webapp-container
+        image: ghcr.io/synapsehealthtech/nexus-adm-webapp:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "150m"
+            memory: "128Mi"
+        envFrom:
+        - secretRef:
+            name: nexus-adm-webapp-secrets
+        command: ["/bin/sh", "-c"]
+        args:
+          - >-
+            echo "window.env = { VITE_CLOUDFLARE_SITE_KEY: '$VITE_CLOUDFLARE_SITE_KEY', VITE_API_URL: '$VITE_API_URL' };" > /usr/share/nginx/html/config.js &&
+            nginx -g 'daemon off;'
+        volumeMounts:
+        - name: nginx-config-volume
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: default.conf
+      volumes:
+      - name: nginx-config-volume
+        configMap:
+          name: nexus-adm-webapp-nginx-conf

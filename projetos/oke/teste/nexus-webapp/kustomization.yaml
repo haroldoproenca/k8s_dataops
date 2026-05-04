@@ -5,9 +5,9 @@ kind: Kustomization
 namespace: nexus-webapp-teste
 
 resources:
-- ../../../../bases/nexus-webapp/1.0.0
+- ../../../../bases/nexus-webapp/1.0.0gw
+- httproute.yaml
+
 patches:
 - path: secret.yaml
-- path: ingress.yaml
 - path: deployment.yaml
-#- path: service.yaml
