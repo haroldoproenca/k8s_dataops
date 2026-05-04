@@ -1,0 +1,49 @@
+---
+# Redis unificado para local/dev — broker (db0), backend (db1), llm-cache (db2)
+# Em produção OKE: substituir por 3 instâncias separadas (ver SKILL nexus-agenticops)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-deployment
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis-container
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          # save "": sem persistência (efêmero para broker/cache)
+          # requirepass: senha via env
+          command:
+            - redis-server
+            - --save
+            - ""
+            - --maxmemory
+            - "512mb"
+            - --maxmemory-policy
+            - allkeys-lru
+            - --requirepass
+            - $(REDIS_PASSWORD)
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: REDIS_PASSWORD
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "512Mi"

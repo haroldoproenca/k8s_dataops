@@ -6,13 +6,7 @@ metadata:
   labels:
     app: nexus-api
 spec:
-  selector:
-    matchLabels:
-      app: nexus-api
   template:
-    metadata:
-      labels:
-        app: nexus-api
     spec:
       nodeSelector:
         kubernetes.io/arch: arm64
@@ -20,7 +14,7 @@ spec:
         - name: ghcr-secret
       containers:
       - name: nexus-api-container
-        image: ghcr.io/synapsehealthtech/nexus-api:v0.2.3
+        image: ghcr.io/synapsehealthtech/nexus-api:v0.5.1
         imagePullPolicy: Always
         command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
         ports:
@@ -32,58 +26,3 @@ spec:
           limits:
             cpu: "300m"
             memory: "256Mi"
-        env:
-        - name: FRONTEND_URL
-          value: "https://fcarminato.nexusplatform.com.br"
-        - name: CORS_ORIGINS
-          value: "https://fcarminato.nexusplatform.com.br,https://fcarminato-api.nexusplatform.com.br,http://localhost:5173"
-        - name: NEXUS_CEP_URL
-          value: "http://nexus-cep-service.nexus-cep.svc.cluster.local:80"
-        - name: NEXUS_CEP_TOKEN
-          value: "change_this_to_a_secure_token"
-        - name: SMTP_HOST
-          value: "smtp.email.sa-saopaulo-1.oci.oraclecloud.com"
-        - name: SMTP_PORT
-          value: "587"
-        - name: SMTP_USER
-          value: "ocid1.user.oc1..aaaaaaaakfesdhqpoapvxpu2wujs7q5byyfg42dlr73l4adlbcrxj6quly3q@ocid1.tenancy.oc1..aaaaaaaanbltruvjeyqnub4hkjwj6sunf3zfqfkyvl3s6tpuwicpcgjplpda.zc.com"
-        - name: SMTP_PASSWORD
-          value: "74-Rt2O6cRFSU:ryC5)t"
-        - name: EMAILS_FROM_EMAIL
-          value: "noreply@nexusplatform.com.br"
-        - name: EMAILS_FROM_NAME
-          value: "Nexus Platform"
-        envFrom:
-        - secretRef:
-            name: nexus-db-credentials
-        - secretRef:
-            name: cloudflare-back-credentials
-#        # 1. Startup Probe: Dá tempo para a API iniciar e conectar ao banco.
-#        # O Kubernetes espera essa probe ter sucesso antes de iniciar as outras.
-#        startupProbe:
-#          httpGet:
-#            path: /healthz
-#            port: 8000
-#          failureThreshold: 30  # Tentará por 30 vezes...
-#          periodSeconds: 10     # ...a cada 10 segundos. (Total de 5 minutos de tolerância)
-#        # 2. Liveness Probe: Reinicia o pod se ele travar.
-#        # Se essa probe falhar, o Kubernetes entende que a aplicação está em um estado
-#        # irrecuperável e reinicia o container.
-#        livenessProbe:
-#          httpGet:
-#            path: /healthz
-#            port: 8000
-#          initialDelaySeconds: 15 # Espera 15s após o startupProbe ter sucesso
-#          periodSeconds: 20       # Verifica a cada 20 segundos
-#          failureThreshold: 3     # Reinicia após 3 falhas consecutivas
-#        # 3. Readiness Probe: Remove o pod do balanceador de carga se ele não estiver pronto.
-#        # Se a conexão com o banco cair, essa probe falhará. O Kubernetes deixará
-#        # de enviar tráfego para este pod, mas não o reiniciará imediatamente.
-#        readinessProbe:
-#          httpGet:
-#            path: /healthz/db
-#            port: 8000
-#          initialDelaySeconds: 5  # Espera 5s após o startupProbe ter sucesso
-#          periodSeconds: 10       # Verifica a cada 10 segundos
-#          failureThreshold: 3     # Marca como "NotReady" após 3 falhas
-#

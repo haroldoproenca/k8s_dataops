@@ -1,0 +1,53 @@
+# Patch: nexus-adm-api Deployment
+# Garante que NENHUMA variável de ambiente esteja hardcoded.
+# Utiliza exclusivamente envFrom para injetar ConfigMaps e Secrets.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-adm-api-deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: nexus-adm-api-container
+        # Sobrescreve o campo env: [] para remover variáveis inline da base.
+        env: []
+        # Injeta TODAS as variáveis via envFrom
+        envFrom:
+        - configMapRef:
+            name: nexus-adm-api-config
+        - configMapRef:
+            name: nexus-adm-api-stripe-config
+        - secretRef:
+            name: nexus-db-credentials
+        - secretRef:
+            name: nexus-adm-api-secrets
+        # Resources recomendados para admin (ambiente local)
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        # Probes de saúde
+        startupProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          failureThreshold: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3

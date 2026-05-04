@@ -1,0 +1,16 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nexus-adm-api-route
+  namespace: nexus-adm-api
+spec:
+  parentRefs:
+  - name: nexus-gateway
+    namespace: nginx-gateway
+    sectionName: https
+  hostnames:
+  - nexus-adm-api.nexusplatform.com.br
+  rules:
+  - backendRefs:
+    - name: nexus-adm-api-service
+      port: 80

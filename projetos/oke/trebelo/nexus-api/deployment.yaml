@@ -1,0 +1,28 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-api-deployment
+  labels:
+    app: nexus-api
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+      - name: nexus-api-container
+        image: ghcr.io/synapsehealthtech/nexus-api:v0.5.1
+        imagePullPolicy: Always
+        command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "75m"
+            memory: "96Mi"
+          limits:
+            cpu: "300m"
+            memory: "256Mi"

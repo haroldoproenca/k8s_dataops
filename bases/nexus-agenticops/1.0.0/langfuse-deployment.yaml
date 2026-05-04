@@ -1,0 +1,128 @@
+---
+# Langfuse Web — UI + API REST
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: langfuse-web-deployment
+  labels:
+    app: langfuse-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: langfuse-web
+  template:
+    metadata:
+      labels:
+        app: langfuse-web
+    spec:
+      containers:
+        - name: langfuse-web-container
+          image: langfuse/langfuse:3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: DATABASE_URL_SYNC
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: NEXTAUTH_SECRET
+            - name: SALT
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: LANGFUSE_ENCRYPTION_KEY
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: LANGFUSE_ENCRYPTION_KEY
+            - name: NEXTAUTH_URL
+              value: "http://langfuse-web-service:3000"
+            - name: TELEMETRY_ENABLED
+              value: "false"
+            - name: LANGFUSE_INIT_ORG_ID
+              value: "nexus"
+            - name: LANGFUSE_INIT_ORG_NAME
+              value: "Nexus AgenticOps"
+            - name: LANGFUSE_INIT_PROJECT_ID
+              value: "nexus-agents"
+            - name: LANGFUSE_INIT_PROJECT_NAME
+              value: "nexus-agents"
+            - name: LANGFUSE_INIT_PROJECT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: LANGFUSE_PUBLIC_KEY
+            - name: LANGFUSE_INIT_PROJECT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: LANGFUSE_SECRET_KEY
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+# Langfuse Worker — processa eventos assíncronos de traces
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: langfuse-worker-deployment
+  labels:
+    app: langfuse-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: langfuse-worker
+  template:
+    metadata:
+      labels:
+        app: langfuse-worker
+    spec:
+      containers:
+        - name: langfuse-worker-container
+          image: langfuse/langfuse-worker:3
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: DATABASE_URL_SYNC
+            - name: SALT
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: LANGFUSE_ENCRYPTION_KEY
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: LANGFUSE_ENCRYPTION_KEY
+            - name: REDIS_HOST
+              value: "redis-service"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: REDIS_PASSWORD
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"

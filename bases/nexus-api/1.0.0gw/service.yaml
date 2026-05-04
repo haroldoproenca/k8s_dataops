@@ -1,0 +1,31 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+    tier: database
+spec:
+  ports:
+    - port: 3306
+      targetPort: 3306
+  selector:
+    app: mysql
+    tier: database
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nexus-api-service
+spec:
+  # 1. Altere o tipo para ClusterIP.
+  type: ClusterIP
+  selector:
+    app: nexus-api
+  ports:
+  - protocol: TCP
+    # 2. A porta do serviço agora pode ser uma porta padrão, como a 80.
+    port: 80
+    targetPort: 8000 # Continua apontando para a porta 8000 do nosso contêiner.

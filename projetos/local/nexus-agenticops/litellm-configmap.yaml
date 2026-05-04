@@ -1,0 +1,59 @@
+# Strategic merge patch — LiteLLM config para K3d local com Ollama no host.
+#
+# Ollama roda no HOST da máquina (acesso à GPU/Metal).
+# K3d acessa via host.k3d.internal (alias automático do K3d para o endereço do host).
+#
+# Antes de aplicar:
+#   ollama serve                  # inicia no host, porta 11434
+#   ollama pull llama3.2          # modelo padrão (~2GB)
+#   ollama pull llama3.2:3b       # modelo roteador/rápido (~1.8GB)
+#   ollama pull llama3.1:8b       # modelo premium (~4.7GB)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litellm-config
+data:
+  config.yaml: |
+    model_list:
+      - model_name: agente-padrao
+        litellm_params:
+          model: ollama/llama3.2
+          api_base: "http://host.k3d.internal:11434"
+          rpm: 1000
+          timeout: 120
+
+      - model_name: agente-rapido
+        litellm_params:
+          model: ollama/llama3.2:3b
+          api_base: "http://host.k3d.internal:11434"
+          rpm: 2000
+          timeout: 60
+
+      - model_name: agente-premium
+        litellm_params:
+          model: ollama/llama3.1:8b
+          api_base: "http://host.k3d.internal:11434"
+          rpm: 500
+          timeout: 180
+
+    router_settings:
+      routing_strategy: "lowest_cost"
+      num_retries: 1
+      fallbacks: []
+
+    general_settings:
+      master_key: "os.environ/LITELLM_MASTER_KEY"
+      cache: true
+      cache_params:
+        type: "redis-semantic"
+        similarity_threshold: 0.95
+        host: "redis-service"
+        port: 6379
+        password: "os.environ/REDIS_PASSWORD"
+      success_callback: ["langfuse"]
+      failure_callback: ["langfuse"]
+
+    environment_variables:
+      LANGFUSE_PUBLIC_KEY: "os.environ/LANGFUSE_PUBLIC_KEY"
+      LANGFUSE_SECRET_KEY: "os.environ/LANGFUSE_SECRET_KEY"
+      LANGFUSE_HOST: "https://agenticops-langfuse.nexusplatform.com.br"

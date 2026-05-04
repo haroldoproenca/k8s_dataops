@@ -1,0 +1,25 @@
+apiVersion: gateway.nginx.org/v1alpha2
+kind: NginxProxy
+metadata:
+  name: nginx-gateway-proxy-config
+  namespace: nginx-gateway
+spec:
+  kubernetes:
+    deployment:
+      replicas: 2
+      container:
+        resources:
+          requests:
+            cpu: "200m"      # NGINX proxy geralmente usa pouca CPU em idle
+            memory: "256Mi"  # Memória base para buffers e conexões
+          limits:
+            cpu: "1000m"     # 1 vCore para picos de tráfego
+            memory: "512Mi"  # Limite conservador para proxy reverso
+    service:
+      patches:
+      - type: StrategicMerge
+        value:
+          metadata:
+            annotations:
+              oci.oraclecloud.com/load-balancer-type: "nlb"
+              oci.oraclecloud.com/oci-network-security-groups: "ocid1.networksecuritygroup.oc1.sa-saopaulo-1.aaaaaaaamrttg4r7fpctavkvk3jkatubj6qgozxr5sippr7ppo3tam5ilnva"

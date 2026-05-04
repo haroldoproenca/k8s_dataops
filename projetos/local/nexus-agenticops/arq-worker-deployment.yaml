@@ -1,0 +1,23 @@
+# Strategic merge patch — ARQ Worker para K3d local
+# Réplica única para economizar recursos da máquina de desenvolvimento.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arq-worker-deployment
+spec:
+  replicas: 1
+  template:
+    spec:
+      # K3d: carregar imagem local com: k3d image import nexus-agenticops:dev -c <cluster>
+      containers:
+        - name: arq-worker-container
+          image: nexus-agenticops:dev
+          imagePullPolicy: Never
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"

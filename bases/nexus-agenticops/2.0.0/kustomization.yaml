@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - litellm-configmap.yaml
+  - secret.yaml
+  # API FastAPI
+  - agents-api-deployment.yaml
+  - agents-api-service.yaml
+  # ARQ Worker (substitui Celery worker + beat)
+  - arq-worker-deployment.yaml
+  # LiteLLM Gateway
+  - litellm-deployment.yaml
+  - litellm-service.yaml
+  # Redis (broker ARQ + cache semântico LiteLLM)
+  - redis-deployment.yaml
+  - redis-service.yaml
+  # PostgreSQL + pgvector (checkpointing + embeddings RAG)
+  - postgres-deployment.yaml
+  - postgres-service.yaml
+  - postgres-pvc.yaml
+  # MinIO (Payload Offloading — AgentState usa apenas URIs)
+  - minio-deployment.yaml
+  - minio-service.yaml
+  - minio-pvc.yaml
+  # Langfuse v3 (observabilidade AGENT/GENERATION/RETRIEVER/GUARDRAIL)
+  - langfuse-deployment.yaml
+  - langfuse-service.yaml
+  # ClickHouse — backend analítico obrigatório para Langfuse v3
+  - clickhouse-deployment.yaml
+  - clickhouse-service.yaml
+  - clickhouse-pvc.yaml
+  # HPA
+  - hpa.yaml

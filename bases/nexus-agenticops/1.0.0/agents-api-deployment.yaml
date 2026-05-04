@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agents-api-deployment
+  labels:
+    app: agents-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agents-api
+  template:
+    metadata:
+      labels:
+        app: agents-api
+    spec:
+      containers:
+        - name: agents-api-container
+          image: nexus-agenticops:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+          envFrom:
+            - configMapRef:
+                name: nexus-agenticops-config
+            - secretRef:
+                name: nexus-agenticops-secrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

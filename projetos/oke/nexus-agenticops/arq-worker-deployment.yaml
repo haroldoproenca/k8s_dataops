@@ -1,0 +1,29 @@
+# Strategic merge patch — ARQ Worker para produção OKE
+# 3 réplicas ARM64 (OCI Ampere A1) — alta disponibilidade com custo reduzido.
+# terminationGracePeriodSeconds: 120 — aguarda tasks em curso antes de desligar.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arq-worker-deployment
+spec:
+  replicas: 3
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      terminationGracePeriodSeconds: 120
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: arq-worker-container
+          # Substituir pelo registry real: ghcr.io/<sua-org>/nexus-agenticops:v2.0.0
+          image: ghcr.io/YOUR_ORG/nexus-agenticops:v2.0.0
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"

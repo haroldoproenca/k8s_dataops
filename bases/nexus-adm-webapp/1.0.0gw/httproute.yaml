@@ -1,0 +1,25 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nexus-adm-webapp-route
+  namespace: nexus-adm-webapp
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "console.nexusplatform.com.br"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    external-dns.alpha.kubernetes.io/target: "132.226.245.136"
+
+spec:
+  parentRefs:
+  - name: nexus-gateway
+    namespace: nginx-gateway
+    sectionName: https
+  hostnames:
+  - "console.nexusplatform.com.br"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: nexus-adm-webapp-service
+      port: 80

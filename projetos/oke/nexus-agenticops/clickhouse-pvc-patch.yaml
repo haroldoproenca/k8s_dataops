@@ -1,0 +1,11 @@
+# Strategic merge patch — ClickHouse PVC para OKE (OCI Block Volume)
+# storageClassName: oci-bv = OCI Block Volume provisionado automaticamente
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: clickhouse-pvc
+spec:
+  storageClassName: oci-bv
+  resources:
+    requests:
+      storage: 50Gi

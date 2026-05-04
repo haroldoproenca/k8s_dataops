@@ -1,0 +1,16 @@
+# nexus-adm/local/nexus-adm-api/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nexus-adm-api
+
+resources:
+- ../../../../bases/nexus-adm-api/1.0.0gw
+- certificate.yaml
+- reference-grant.yaml
+
+patches:
+- path: httproute.yaml
+- path: deployment.yaml
+- path: configmap.yaml
+- path: secret.yaml

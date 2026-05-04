@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nexus-adm-api-tls
+  namespace: nexus-adm-api
+spec:
+  secretName: nexus-adm-api-tls-secret
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+  dnsNames:
+  - nexus-adm-api.nexusplatform.com.br

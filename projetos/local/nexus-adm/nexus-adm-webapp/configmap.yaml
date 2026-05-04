@@ -1,0 +1,52 @@
+# Patch: nexus-adm-webapp ConfigMap
+# A webapp é um SPA servido por NGINX — não injeta env vars em runtime.
+# Variáveis de ambiente do frontend são compiladas em build-time via Vite.
+# Este configmap atualiza a configuração de proxy reverso do NGINX para
+# redirecionar chamadas de /api/* para a nexus-adm-api dentro do cluster.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-adm-webapp-nginx-conf
+  namespace: nexus-adm-webapp
+data:
+  default.conf: |
+    server {
+        listen       80;
+        server_name  localhost;
+
+        # Servir o SPA React/Vite
+        location / {
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+            # React Router: fallback para index.html em rotas client-side
+            try_files $uri $uri/ /index.html;
+        }
+
+        # (opcional) Proxy reverso para a API — útil se o SPA estiver
+        # configurado com VITE_API_BASE_URL=/api em vez de URL absoluta.
+        # location /api/ {
+        #     proxy_pass http://nexus-adm-api-service.nexus-adm-api.svc.cluster.local:80/;
+        #     proxy_set_header Host $host;
+        #     proxy_set_header X-Real-IP $remote_addr;
+        #     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        #     proxy_set_header X-Forwarded-Proto $scheme;
+        # }
+
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+            root /usr/share/nginx/html;
+        }
+    }
+---
+# Patch: nexus-adm-webapp Frontend Config
+# Armazena variáveis usadas pelo frontend (ex: endpoints de API).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-adm-webapp-config
+  namespace: nexus-adm-webapp
+data:
+  # URL da API Admin (deve ser acessível pelo browser)
+  VITE_API_BASE_URL: "https://nexus-adm-api.nexusplatform.com.br"
+  ENVIRONMENT: "local"
+

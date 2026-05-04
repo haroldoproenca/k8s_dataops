@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-adm-api-config
+data:
+  NEXUS_CEP_URL: "http://nexus-cep-service.nexus-cep.svc.cluster.local:80"
+  SMTP_HOST: "smtp.email.sa-saopaulo-1.oci.oraclecloud.com"
+  SMTP_PORT: "587"
+  EMAILS_FROM_EMAIL: "noreply@nexusplatform.com.br"
+  EMAILS_FROM_NAME: "Nexus Platform"
+  CORS_ORIGINS: "http://localhost:5173,https://admin.nexusplatform.com.br,https://console.nexusplatform.com.br"
+  MYSQL_HOST: "mysql"
+  GITHUB_ORG: "synapsehealthtech"
+  TEMPLATES_REPO: "nexus-k8s-templates"
+  TEMPLATES_BRANCH: "main"

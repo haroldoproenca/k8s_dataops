@@ -1,0 +1,11 @@
+# Em produção OKE: escala MinIO para 0 réplicas.
+# O storage é feito pelo OCI Object Storage (S3-compatível).
+# O MinIOClient do Python usa a mesma API — zero mudança de código.
+# Configurar MINIO_ENDPOINT no configmap.yaml com o endpoint OCI Object Storage.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio-deployment
+spec:
+  replicas: 0

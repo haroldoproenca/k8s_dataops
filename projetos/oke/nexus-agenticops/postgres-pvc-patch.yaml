@@ -1,0 +1,13 @@
+# Em produção OKE: usa OCI Block Volume para PostgreSQL.
+# storageClassName "oci-bv" usa o CSI driver nativo do OKE para Block Volumes.
+# Aumenta o storage para 20Gi (produção).
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+spec:
+  storageClassName: oci-bv
+  resources:
+    requests:
+      storage: 20Gi

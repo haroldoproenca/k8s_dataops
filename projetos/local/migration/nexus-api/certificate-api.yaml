@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: migration-api-tls-secret
+  namespace: nexus-api
+spec:
+  secretName: migration-api-tls-secret
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+  dnsNames:
+  - migration-api.nexusplatform.com.br

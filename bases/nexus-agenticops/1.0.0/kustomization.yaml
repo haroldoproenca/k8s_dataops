@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - litellm-configmap.yaml
+  - secret.yaml
+  - agents-api-deployment.yaml
+  - agents-api-service.yaml
+  - celery-worker-deployment.yaml
+  - celery-beat-deployment.yaml
+  - litellm-deployment.yaml
+  - litellm-service.yaml
+  - redis-deployment.yaml
+  - redis-service.yaml
+  - postgres-deployment.yaml
+  - postgres-service.yaml
+  - postgres-pvc.yaml
+  - langfuse-deployment.yaml
+  - langfuse-service.yaml
+  - langflow-deployment.yaml
+  - langflow-service.yaml
+  - hpa.yaml

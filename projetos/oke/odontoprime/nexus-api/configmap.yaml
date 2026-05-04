@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-api-config
+data:
+  FRONTEND_URL: "https://odontoprime.nexusplatform.com.br"
+  CORS_ORIGINS: "https://odontoprime.nexusplatform.com.br,https://odontoprime-api.nexusplatform.com.br,http://localhost:5173,*"

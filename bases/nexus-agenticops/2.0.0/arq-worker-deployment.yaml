@@ -1,0 +1,60 @@
+---
+# ARQ Worker — substitui Celery (worker + beat) por motor nativo async.
+#
+# Por que ARQ ao invés de Celery?
+# Celery requer asyncio.run() para executar LangGraph/Pydantic AI, criando um
+# novo event loop por task — deadlocks com asyncpg e httpx. ARQ executa no event
+# loop nativo, compartilha pools de conexão e suporta cron jobs nativamente.
+#
+# Replicas: 1 (base/dev). Overlay prod: 3 réplicas ARM64.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arq-worker-deployment
+  labels:
+    app: arq-worker
+    component: agenticops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: arq-worker
+  template:
+    metadata:
+      labels:
+        app: arq-worker
+        component: agenticops
+    spec:
+      # Graceful shutdown: aguarda tasks em andamento terminarem (job_timeout = 3600s)
+      terminationGracePeriodSeconds: 120
+      containers:
+        - name: arq-worker-container
+          image: nexus-agenticops:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -m
+            - arq
+            - tasks.arq_worker.WorkerSettings
+          envFrom:
+            - configMapRef:
+                name: nexus-agenticops-config
+            - secretRef:
+                name: nexus-agenticops-secrets
+          # ARQ não expõe HTTP endpoint — liveness via processo Python
+          livenessProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - "import arq; print('ok')"
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"

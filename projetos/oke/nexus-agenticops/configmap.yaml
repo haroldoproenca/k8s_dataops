@@ -1,0 +1,27 @@
+# Strategic merge patch — valores para produção OKE (Oracle Cloud)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-agenticops-config
+data:
+  # Langfuse URL pública de produção
+  LANGFUSE_HOST: "https://agenticops-langfuse.nexusplatform.com.br"
+
+  # URLs públicas para CORS
+  CORS_ORIGINS: "https://agenticops-api.nexusplatform.com.br"
+
+  # OCI Object Storage (S3-compatível) — substitui MinIO local
+  # Formato: <namespace>.compat.objectstorage.<region>.oraclecloud.com
+  # Sobrescrito no secret.yaml com a URL real do bucket OCI
+  MINIO_ENDPOINT: "objectstorage.sa-saopaulo-1.oraclecloud.com"
+  MINIO_BUCKET: "nexus-agents-prod"
+  MINIO_SECURE: "true"
+
+  ENVIRONMENT: "production"
+
+  # Langfuse v3 — S3 events via OCI Object Storage (substitui MinIO local)
+  # Formato endpoint: https://<namespace>.compat.objectstorage.<region>.oraclecloud.com
+  LANGFUSE_S3_EVENT_UPLOAD_BUCKET: "nexus-langfuse-events-prod"
+  LANGFUSE_S3_EVENT_UPLOAD_REGION: "sa-saopaulo-1"
+  LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+  LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: "https://objectstorage.sa-saopaulo-1.oraclecloud.com"

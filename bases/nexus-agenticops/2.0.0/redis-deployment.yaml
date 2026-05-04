@@ -1,0 +1,64 @@
+---
+# Redis unificado: broker ARQ (db0), result backend ARQ (db1), cache semântico LiteLLM (db2).
+#
+# Política allkeys-lfu: mantém respostas mais frequentes em memória (ideal para cache LLM).
+# Sem persistência (save ""): broker e cache LLM são efêmeros — regeneráveis.
+#
+# Em produção OKE com alto volume: considerar 2 instâncias separadas via overlay.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-deployment
+  labels:
+    app: redis
+    component: agenticops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        component: agenticops
+    spec:
+      containers:
+        - name: redis-container
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          command:
+            - redis-server
+            - --save
+            - ""
+            - --maxmemory
+            - "512mb"
+            - --maxmemory-policy
+            - allkeys-lfu
+            - --maxmemory-samples
+            - "10"
+            - --requirepass
+            - $(REDIS_PASSWORD)
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-agenticops-secrets
+                  key: REDIS_PASSWORD
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - -a
+                - $(REDIS_PASSWORD)
+                - ping
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "512Mi"

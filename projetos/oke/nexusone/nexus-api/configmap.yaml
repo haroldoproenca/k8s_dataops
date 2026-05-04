@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-api-config
+data:
+  FRONTEND_URL: "https://nexusone.nexusplatform.com.br"
+  CORS_ORIGINS: "https://nexusone.nexusplatform.com.br,https://nexusone-api.nexusplatform.com.br,http://localhost:5173"

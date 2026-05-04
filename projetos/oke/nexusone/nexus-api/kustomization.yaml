@@ -5,10 +5,10 @@ kind: Kustomization
 namespace: nexus-api-nexusone
 
 resources:
-- ../../../../bases/nexus-api/1.0.0
+- ../../../../bases/nexus-api/1.0.0gw
+- httproute.yaml
 
 patches:
-- path: ingress.yaml
 - path: secret.yaml
+- path: configmap.yaml
 - path: deployment.yaml
-#- path: deployment.yaml

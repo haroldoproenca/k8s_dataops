@@ -1,0 +1,30 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nexus-adm-api-route
+  namespace: nexus-adm-api
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "nexus-adm-api.nexusplatform.com.br"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    external-dns.alpha.kubernetes.io/target: "132.226.245.136"
+    # CORS configurado via annotations (NGINX Gateway Fabric)
+    nginx.org/cors-allow-origin: "https://console.nexusplatform.com.br"
+    nginx.org/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.org/cors-allow-headers: "DNT, X-CustomHeader, Keep-Alive, User-Agent, X-Requested-With, If-Modified-Since, Cache-Control, Content-Type, Authorization"
+    nginx.org/cors-allow-credentials: "true"
+
+spec:
+  parentRefs:
+  - name: nexus-gateway
+    namespace: nginx-gateway
+    sectionName: https
+  hostnames:
+  - "nexus-adm-api.nexusplatform.com.br"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: nexus-adm-api-service
+      port: 80

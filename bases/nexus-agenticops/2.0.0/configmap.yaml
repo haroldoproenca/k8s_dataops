@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-agenticops-config
+data:
+  # API FastAPI
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+
+  # LiteLLM — gateway único para todos os agentes. Nunca aponte direto ao provedor.
+  LITELLM_BASE_URL: "http://litellm-service:4000/v1"
+
+  # PostgreSQL + pgvector (checkpointing LangGraph + embeddings RAG)
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "nexus_agents"
+  POSTGRES_USER: "postgres"
+
+  # Redis — broker ARQ (db0) + cache semântico LiteLLM (db2) + Langfuse events
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+
+  # MinIO — Payload Offloading (AgentState carrega só URIs, nunca bytes)
+  # Em produção OKE: substituir pelo endpoint OCI Object Storage (S3-compatível)
+  MINIO_ENDPOINT: "minio-service:9000"
+  MINIO_BUCKET: "nexus-agents"
+  MINIO_SECURE: "false"
+
+  # Langfuse observabilidade (sobrescrito por overlay com URL pública)
+  LANGFUSE_HOST: "http://langfuse-web-service:3000"
+
+  # ClickHouse — backend analítico Langfuse v3 (obrigatório desde v3)
+  CLICKHOUSE_HOST: "clickhouse-service"
+  CLICKHOUSE_PORT: "8123"
+  CLICKHOUSE_USER: "default"
+
+  # Langfuse v3 — S3/MinIO para event upload (Payload Store)
+  # Em OKE: sobrescrito pelo overlay para OCI Object Storage
+  LANGFUSE_S3_EVENT_UPLOAD_BUCKET: "nexus-langfuse-events"
+  LANGFUSE_S3_EVENT_UPLOAD_REGION: "auto"
+  LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+  LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: "http://minio-service:9000"
+
+  # Ambiente (local | staging | production)
+  ENVIRONMENT: "development"
