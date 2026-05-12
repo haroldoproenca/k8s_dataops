@@ -1,0 +1,34 @@
+# Strategic merge patch — imagem dev para K3d local
+# A URL da API é injetada em runtime via ConfigMap (configmap-webapp-env.yaml)
+# montado sobre /usr/share/nginx/html/env.js — sem necessidade de --build-arg.
+# Build e import:
+#   docker build -t nexus-agenticops-webapp:latest /home/haroldoproenca/git/nexus-agenticops-webapp
+#   k3d image import nexus-agenticops-webapp:latest -c <cluster>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-agenticops-webapp-deployment
+spec:
+  replicas: 1
+  template:
+    spec:
+      volumes:
+        - name: webapp-env-config
+          configMap:
+            name: nexus-agenticops-webapp-env
+      containers:
+        - name: webapp-container
+          image: nexus-agenticops-webapp:latest
+          imagePullPolicy: Never
+          volumeMounts:
+            - name: webapp-env-config
+              mountPath: /usr/share/nginx/html/env.js
+              subPath: env.js
+          #resources:
+          #  requests:
+          #    cpu: "25m"
+          #    memory: "32Mi"
+          #  limits:
+          #    cpu: "100m"
+          #    memory: "128Mi"

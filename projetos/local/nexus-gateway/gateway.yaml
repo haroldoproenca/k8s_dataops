@@ -4,11 +4,12 @@ metadata:
   name: nexus-gateway
   namespace: nginx-gateway  # Namespace central para o controller e o gateway
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: "*.nexusplatform.com.br,nexusplatform.com.br"
+    external-dns.alpha.kubernetes.io/hostname: "*.nexusplatform.com.br,nexusplatform.com.br,*.tech.nexusplatform.com.br"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   gatewayClassName: nginx
   listeners:
+  # ── *.nexusplatform.com.br (domínio principal — projetos clientes) ──────────
   - name: http
     port: 80
     protocol: HTTP
@@ -24,6 +25,26 @@ spec:
       mode: Terminate
       certificateRefs:
       - name: wildcard-tls-secret
+        namespace: nginx-gateway
+    allowedRoutes:
+      namespaces:
+        from: All
+  # ── *.tech.nexusplatform.com.br (stack nexus-agenticops e plataforma interna) ─
+  - name: tech-http
+    port: 80
+    protocol: HTTP
+    hostname: "*.tech.nexusplatform.com.br"
+    allowedRoutes:
+      namespaces:
+        from: All
+  - name: tech-https
+    port: 443
+    protocol: HTTPS
+    hostname: "*.tech.nexusplatform.com.br"
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: wildcard-tech-tls-secret
         namespace: nginx-gateway
     allowedRoutes:
       namespaces:

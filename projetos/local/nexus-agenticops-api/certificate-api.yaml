@@ -1,0 +1,17 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: hark-api-tls
+  namespace: nexus-agenticops
+spec:
+  secretName: hark-api-tls-secret
+  privateKey:
+    rotationPolicy: Always
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+  commonName: tech.nexusplatform.com.br
+  dnsNames:
+    - tech.nexusplatform.com.br
+    - "*.tech.nexusplatform.com.br"

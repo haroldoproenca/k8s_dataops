@@ -4,11 +4,8 @@ kind: ConfigMap
 metadata:
   name: nexus-agenticops-config
 data:
-  # Langfuse acessível pelo hostname público local
-  LANGFUSE_HOST: "https://agenticops-langfuse.nexusplatform.com.br"
-
-  # URLs públicas para CORS e referência interna
-  CORS_ORIGINS: "https://agenticops-api.nexusplatform.com.br,http://localhost:3000,http://localhost:8000"
+  # CORS — inclui API pública + webapp local + webapp público
+  CORS_ORIGINS: "https://hark-api.tech.nexusplatform.com.br,https://hark.tech.nexusplatform.com.br,http://localhost:5173,http://localhost:3000"
 
   # MinIO local (ClusterIP do K3d)
   MINIO_ENDPOINT: "minio-service:9000"
@@ -16,6 +13,6 @@ data:
 
   ENVIRONMENT: "local"
 
-  # ClickHouse — L5 Harness (alinha infra declarada com consumo futuro no Python)
+  # ClickHouse — FQDN para referência interna (L5 Harness: alinha infra com código)
   CLICKHOUSE_HOST: "clickhouse-service.nexus-agenticops.svc.cluster.local"
   CLICKHOUSE_PORT: "8123"

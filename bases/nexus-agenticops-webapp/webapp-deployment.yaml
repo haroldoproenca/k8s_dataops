@@ -1,0 +1,50 @@
+---
+# nexus-agenticops-webapp — React 19 + Vite 6 + MUI v6 servido por nginx.
+#
+# VITE_API_BASE_URL é baked em build-time (ARG no Dockerfile).
+# O pod não precisa de envFrom — nginx serve apenas arquivos estáticos.
+# Para mudar a URL da API: rebuild da imagem com novo build-arg.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-agenticops-webapp-deployment
+  labels:
+    app.kubernetes.io/name: nexus-agenticops-webapp
+    app.kubernetes.io/component: nexus-agenticops-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nexus-agenticops
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nexus-agenticops
+        app.kubernetes.io/component: nexus-agenticops-webapp
+    spec:
+      containers:
+        - name: webapp-container
+          image: ghcr.io/haroldoproenca/nexus-agenticops-webapp:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          # resources:
+          #   requests:
+          #     cpu: "25m"
+          #     memory: "32Mi"
+          #   limits:
+          #     cpu: "100m"
+          #     memory: "128Mi"

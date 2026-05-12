@@ -1,0 +1,22 @@
+# Strategic merge patch — imagem dev para K3d (Local-First)
+# k3d image import nexus-agenticops-api:latest -c <cluster>  
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-agenticops-api-deployment
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: nexus-agenticops-api-container
+          image: nexus-agenticops-api:latest
+          imagePullPolicy: Never
+          #resources:
+          #  requests:
+          #    cpu: "100m"
+          #    memory: "128Mi"
+          #  limits:
+          #    cpu: "500m"
+          #    memory: "512Mi"

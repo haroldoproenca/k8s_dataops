@@ -14,5 +14,4 @@ resources:
 
 patches:
 - path: configmap.yaml
-
-
+- path: secret.yaml

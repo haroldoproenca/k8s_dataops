@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nexus-agenticops
+
+resources:
+  - ../../../bases/nexus-agenticops-webapp
+  - httproute-webapp.yaml
+  - certificate-webapp.yaml
+  - configmap-webapp-env.yaml
+
+patches:
+  - path: webapp-deployment.yaml
