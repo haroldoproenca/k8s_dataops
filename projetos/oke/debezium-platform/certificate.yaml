@@ -1,0 +1,17 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: debezium-platform-tls
+  namespace: debezium-platform
+spec:
+  secretName: debezium-platform-tls-secret
+  privateKey:
+    rotationPolicy: Always
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+  commonName: nexusplatform.com.br
+  dnsNames:
+    - nexusplatform.com.br
+    - "*.nexusplatform.com.br"

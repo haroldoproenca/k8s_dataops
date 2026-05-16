@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cubestore-worker
+  labels:
+    app: cubestore-worker
+spec:
+  serviceName: cubestore-worker
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cubestore-worker
+  template:
+    metadata:
+      labels:
+        app: cubestore-worker
+    spec:
+      initContainers:
+        - name: wait-for-router
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z cubestore-router 9999; do echo "waiting for cubestore-router"; sleep 2; done']
+      volumes:
+        - name: cubestore-data
+          persistentVolumeClaim:
+            claimName: cubestore-pvc
+      containers:
+        - name: cubestore-worker
+          image: cubejs/cubestore:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: worker
+              containerPort: 10001
+              protocol: TCP
+          env:
+            # Downward API: MY_POD_NAME → cubestore-worker-0, cubestore-worker-1, ...
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            # CUBESTORE_SERVER_NAME único por pod via nome do StatefulSet
+            - name: CUBESTORE_SERVER_NAME
+              value: "$(MY_POD_NAME).cubestore-worker:10001"
+            - name: CUBESTORE_WORKER_PORT
+              value: "10001"
+            - name: CUBESTORE_REMOTE_DIR
+              value: "/cube/data"
+            - name: CUBESTORE_META_ADDR
+              value: "cubestore-router:9999"
+            - name: CUBESTORE_WORKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: cube-config
+                  key: CUBESTORE_WORKERS
+          volumeMounts:
+            - name: cubestore-data
+              mountPath: /cube/data
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"

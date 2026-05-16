@@ -1,0 +1,18 @@
+# Superset é ferramenta interna — min 1 replica economiza recursos no OKE
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: superset-hpa
+  namespace: superset
+spec:
+  minReplicas: 1
+  maxReplicas: 3
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: superset-hpa-worker
+  namespace: superset
+spec:
+  minReplicas: 1
+  maxReplicas: 3

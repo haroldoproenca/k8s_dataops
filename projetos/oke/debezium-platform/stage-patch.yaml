@@ -1,0 +1,23 @@
+# Strategic merge patch — OKE produção (ARM64)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stage
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      containers:
+        - name: stage
+          imagePullPolicy: Always
+          env:
+            - name: CONDUCTOR_URL
+              value: "https://debezium-platform-api.nexusplatform.com.br"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"

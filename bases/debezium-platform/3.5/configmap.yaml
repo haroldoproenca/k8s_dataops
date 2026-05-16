@@ -1,0 +1,13 @@
+---
+# Source: debezium-platform/templates/conductor-config-map.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: conductor
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: debezium-platform
+    app.kubernetes.io/instance: debezium-platform
+    app.kubernetes.io/managed-by: Helm
+  name: debezium-platform-offsets
+data: {}

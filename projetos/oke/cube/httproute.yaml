@@ -1,0 +1,39 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cube-api-route
+  namespace: cube
+spec:
+  parentRefs:
+    - name: nexus-gateway
+      namespace: nginx-gateway
+      sectionName: https
+  hostnames:
+    - "cube.nexusplatform.com.br"
+  rules:
+    # WebSocket para subscriptions e status de pré-agregações
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /cubejs-api/v1/subscribe
+          headers:
+            - type: Exact
+              name: Upgrade
+              value: websocket
+      timeouts:
+        request: 0s
+        backendRequest: 0s
+      backendRefs:
+        - name: cube-api
+          port: 4000
+    # Endpoints HTTP padrão
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      timeouts:
+        request: 120s
+        backendRequest: 120s
+      backendRefs:
+        - name: cube-api
+          port: 4000

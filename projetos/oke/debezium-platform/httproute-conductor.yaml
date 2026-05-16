@@ -1,23 +1,23 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: webapp-route
-  namespace: nexus-agenticops
+  name: debezium-conductor-route
+  namespace: debezium-platform
 spec:
   parentRefs:
     - name: nexus-gateway
       namespace: nginx-gateway
-      sectionName: tech-https
+      sectionName: https
   hostnames:
-    - "hark.tech.nexusplatform.com.br"
+    - "debezium-platform-api.nexusplatform.com.br"
   rules:
     - matches:
         - path:
             type: PathPrefix
             value: /
       timeouts:
-        request: 30s
-        backendRequest: 30s
+        request: 60s
+        backendRequest: 60s
       backendRefs:
-        - name: nexus-agenticops-webapp-service
-          port: 80
+        - name: conductor
+          port: 8080

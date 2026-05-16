@@ -1,0 +1,27 @@
+# Patch para o deployment principal do Superset (web) — OKE arm64
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: superset
+  namespace: superset
+spec:
+  replicas: 1
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      containers:
+      - name: superset
+        image: apache/superset:4.1.0
+        env:
+        - name: REDIS_HOST
+          value: redis-service
+        - name: REDIS_PORT
+          value: "6379"
+        resources:
+          requests:
+            cpu: "300m"
+            memory: "768Mi"
+          limits:
+            cpu: "1500m"
+            memory: "2Gi"

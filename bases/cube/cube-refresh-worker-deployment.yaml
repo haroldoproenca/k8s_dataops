@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cube-refresh-worker
+  labels:
+    app: cube-refresh-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cube-refresh-worker
+  template:
+    metadata:
+      labels:
+        app: cube-refresh-worker
+    spec:
+      volumes:
+        - name: cube-conf
+          persistentVolumeClaim:
+            claimName: cubeapi-pvc
+      containers:
+        - name: cube-refresh-worker
+          image: cubejs/cube:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CUBEJS_REFRESH_WORKER
+              value: "true"
+            # Aumentar heap para lidar com grandes pre-aggregations
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=1024"
+          envFrom:
+            - configMapRef:
+                name: cube-config
+            - secretRef:
+                name: cube-secrets
+          volumeMounts:
+            - name: cube-conf
+              mountPath: /cube/conf
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1.5Gi"

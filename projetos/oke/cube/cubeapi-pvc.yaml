@@ -1,0 +1,13 @@
+# Strategic merge patch — OKE usa oci-fss (ReadWriteMany) para compartilhar
+# /cube/conf entre cube-api e cube-refresh-worker em nós distintos
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cubeapi-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: oci-fss
+  resources:
+    requests:
+      storage: 5Gi

@@ -1,0 +1,16 @@
+# Strategic merge patch — valores locais (K3d)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cube-config
+data:
+  # RisingWave local — ajuste o namespace/serviço se diferente
+  CUBEJS_DB_HOST: "risingwave-frontend.risingwave.svc.cluster.local"
+  CUBEJS_DB_PORT: "4566"
+
+  # Dev mode expõe playground em localhost:4000
+  CUBEJS_DEV_MODE: "true"
+  CUBEJS_LOG_LEVEL: "info"
+
+  # 1 worker em local (RWO PVC num único nó K3d)
+  CUBESTORE_WORKERS: "cubestore-worker-0.cubestore-worker:10001"

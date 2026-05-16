@@ -1,0 +1,19 @@
+# Strategic merge patch — K3d local-first
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cube-api
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: cube-api
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "768Mi"

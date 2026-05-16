@@ -1,0 +1,27 @@
+# Patch para o Job de inicialização — OKE arm64
+# Re-execute com: kubectl delete job superset-init-db -n superset && kubectl apply -k .
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: superset-init-db
+  namespace: superset
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      containers:
+      - name: superset-init-db
+        image: apache/superset:4.1.0
+        env:
+        - name: REDIS_HOST
+          value: redis-service
+        - name: REDIS_PORT
+          value: "6379"
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"

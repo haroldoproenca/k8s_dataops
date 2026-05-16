@@ -1,0 +1,60 @@
+---
+# Source: debezium-platform/charts/debezium-operator/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: debezium-operator
+    app.kubernetes.io/version: 3.2.0-beta1
+    app.kubernetes.io/managed-by: quarkus
+  name: debezium-operator
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: debezium-operator
+    app.kubernetes.io/version: 3.2.0-beta1
+  type: ClusterIP
+---
+# Source: debezium-platform/templates/conductor-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/name: conductor
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: debezium-platform
+    app.kubernetes.io/instance: debezium-platform
+    app.kubernetes.io/managed-by: Helm
+  name: conductor
+spec:
+  ports:
+    - name: conductor-port
+      port: 8080
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: conductor
+---
+# Source: debezium-platform/templates/stage-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/name: stage
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: debezium-platform
+    app.kubernetes.io/instance: debezium-platform
+    app.kubernetes.io/managed-by: Helm
+  name: stage
+spec:
+  ports:
+    - name: stage-port
+      port: 3000
+      targetPort: 3000
+  selector:
+    app.kubernetes.io/name: stage

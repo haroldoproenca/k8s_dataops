@@ -1,0 +1,31 @@
+# Patch para o Celery Beat (scheduler)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: superset-celerybeat
+  namespace: superset
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: wait-for-postgres-redis
+        env:
+        - name: REDIS_HOST
+          value: redis-service
+        - name: REDIS_PORT
+          value: "6379"
+      containers:
+      - name: superset-celerybeat
+        image: apache/superset:4.1.0
+        env:
+        - name: REDIS_HOST
+          value: redis-service
+        - name: REDIS_PORT
+          value: "6379"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"

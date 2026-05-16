@@ -1,0 +1,18 @@
+# Reduz replicas mínimas para 1 no ambiente local (economiza recursos)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: superset-hpa
+  namespace: superset
+spec:
+  minReplicas: 1
+  maxReplicas: 2
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: superset-hpa-worker
+  namespace: superset
+spec:
+  minReplicas: 1
+  maxReplicas: 2

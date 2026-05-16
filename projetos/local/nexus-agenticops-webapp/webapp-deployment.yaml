@@ -25,10 +25,24 @@ spec:
             - name: webapp-env-config
               mountPath: /usr/share/nginx/html/env.js
               subPath: env.js
-          #resources:
-          #  requests:
-          #    cpu: "25m"
-          #    memory: "32Mi"
-          #  limits:
-          #    cpu: "100m"
-          #    memory: "128Mi"
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "32Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+          livenessProbe:
+            httpGet:
+              path: /index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /index.html
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3

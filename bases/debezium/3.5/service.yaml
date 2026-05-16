@@ -1,0 +1,20 @@
+---
+# Source: debezium-operator/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: debezium-operator
+    app.kubernetes.io/version: 3.5.1
+    app.kubernetes.io/managed-by: quarkus
+  name: debezium-operator
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: debezium-operator
+    app.kubernetes.io/version: 3.5.1
+  type: ClusterIP

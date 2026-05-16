@@ -1,0 +1,23 @@
+# Strategic merge patch — K3d local-first
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cube-refresh-worker
+spec:
+  template:
+    spec:
+      containers:
+        - name: cube-refresh-worker
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CUBEJS_REFRESH_WORKER
+              value: "true"
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=512"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "768Mi"

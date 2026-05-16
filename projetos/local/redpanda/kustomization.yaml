@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: redpanda
+
+resources:
+  - ../../../bases/redpanda/26.1
+  - httproute-console.yaml
+  - certificate.yaml
+  - reference-grant.yaml
+
+patches:
+  - path: redpanda-patch.yaml

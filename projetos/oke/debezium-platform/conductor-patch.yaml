@@ -1,0 +1,27 @@
+# Strategic merge patch — OKE produção (ARM64)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: conductor
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      containers:
+        - name: conductor
+          imagePullPolicy: Always
+          env:
+            - name: QUARKUS_HTTP_CORS_ORIGINS
+              value: "https://debezium-platform.nexusplatform.com.br"
+            - name: QUARKUS_DATASOURCE_JDBC_URL
+              value: "jdbc:postgresql://postgres.debezium-platform.svc.cluster.local:5432/debezium"
+            - name: QUARKUS_KUBERNETES_CLIENT_NAMESPACE
+              value: debezium-platform
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"

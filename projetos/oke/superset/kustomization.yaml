@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: superset
+
+resources:
+- ../../../bases/superset/6.1
+- namespace.yaml
+- redis.yaml
+- httproute.yaml
+- certificate.yaml
+- reference-grant.yaml
+
+patches:
+- path: secrets.yaml
+- path: deployment-superset.yaml
+- path: deployment-worker.yaml
+- path: deployment-celerybeat.yaml
+- path: job-init-db.yaml
+- path: hpa-patch.yaml

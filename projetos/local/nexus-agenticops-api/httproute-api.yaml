@@ -11,6 +11,23 @@ spec:
   hostnames:
     - "hark-api.tech.nexusplatform.com.br"
   rules:
+    # SSE — /flows/parse/stream exige timeout infinito (conexão longa de streaming)
+    # Esta regra deve vir ANTES da regra geral para ter precedência no match
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /flows/parse/stream
+          headers:
+            - type: Exact
+              name: Accept
+              value: text/event-stream
+      timeouts:
+        request: 0s          # sem timeout para SSE
+        backendRequest: 0s
+      backendRefs:
+        - name: nexus-agenticops-api-service
+          port: 80
+    # Regra geral — endpoints HTTP normais
     - matches:
         - path:
             type: PathPrefix

@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cubestore-router
+  labels:
+    app: cubestore-router
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cubestore-router
+  template:
+    metadata:
+      labels:
+        app: cubestore-router
+    spec:
+      volumes:
+        - name: cubestore-data
+          persistentVolumeClaim:
+            claimName: cubestore-pvc
+      containers:
+        - name: cubestore-router
+          image: cubejs/cubestore:latest
+          imagePullPolicy: IfNotPresent
+          # unset CUBESTORE_WORKER_PORT para que o roteador não inicie em modo worker
+          command: ["/bin/sh", "-c"]
+          args: ["unset CUBESTORE_WORKER_PORT; ./cubestored"]
+          ports:
+            - name: meta
+              containerPort: 9999
+              protocol: TCP
+            - name: http
+              containerPort: 3030
+              protocol: TCP
+            - name: mysql
+              containerPort: 3306
+              protocol: TCP
+          env:
+            - name: CUBESTORE_META_PORT
+              value: "9999"
+            - name: CUBESTORE_SERVER_NAME
+              value: "cubestore-router:9999"
+            - name: CUBESTORE_REMOTE_DIR
+              value: "/cube/data"
+            - name: CUBESTORE_WORKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: cube-config
+                  key: CUBESTORE_WORKERS
+          volumeMounts:
+            - name: cubestore-data
+              mountPath: /cube/data
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1.5Gi"

@@ -12,6 +12,10 @@ resources:
   - certificate-langfuse.yaml
   - certificate-litellm.yaml
   - reference-grant.yaml
+  # KEDA — descomente após instalar: helm install keda kedacore/keda -n keda --create-namespace
+  # Antes de aplicar, remova o HPA do worker (hpa.yaml na base) para evitar conflito.
+  #- keda-rbac.yaml
+  #- keda-scaledobject.yaml
 
 patches:
   - path: configmap.yaml
