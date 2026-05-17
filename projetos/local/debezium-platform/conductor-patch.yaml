@@ -6,12 +6,48 @@ metadata:
 spec:
   template:
     spec:
+      initContainers:
+        - name: fetch-descriptors
+          image: curlimages/curl:8.6.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Fetching OCI manifest from quay.io..."
+              MANIFEST=$(curl -sf \
+                "https://quay.io/v2/debezium/debezium-descriptors/manifests/nightly" \
+                -H "Accept: application/vnd.oci.image.manifest.v1+json")
+              # Layer digest is the 2nd sha256 in manifest (1st is empty config)
+              DIGEST=$(echo "$MANIFEST" | grep -oE 'sha256:[a-f0-9]{64}' | sed -n '2p')
+              echo "Layer digest: $DIGEST"
+              echo "Downloading descriptor archive..."
+              curl -sL \
+                "https://quay.io/v2/debezium/debezium-descriptors/blobs/$DIGEST" \
+                -o /tmp/descriptors.tar.gz
+              echo "Extracting to /opt/descriptors..."
+              tar -xzf /tmp/descriptors.tar.gz -C /opt/descriptors
+              echo "Done. Versions available:"
+              ls /opt/descriptors/
+          volumeMounts:
+            - name: descriptors
+              mountPath: /opt/descriptors
       containers:
         - name: conductor
           env:
+            - name: QUARKUS_HTTP_CORS
+              value: "true"
             - name: QUARKUS_HTTP_CORS_ORIGINS
               value: "https://debezium-platform.tech.nexusplatform.com.br"
             - name: QUARKUS_DATASOURCE_JDBC_URL
               value: "jdbc:postgresql://postgres.debezium-platform.svc.cluster.local:5432/debezium"
             - name: QUARKUS_KUBERNETES_CLIENT_NAMESPACE
               value: debezium-platform
+            - name: CONDUCTOR_DESCRIPTORS_VOLUME_SOURCE
+              value: "true"
+          volumeMounts:
+            - name: descriptors
+              mountPath: /opt/descriptors
+      volumes:
+        - name: descriptors
+          emptyDir: {}

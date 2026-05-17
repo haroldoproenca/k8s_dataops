@@ -10,4 +10,4 @@ spec:
         - name: stage
           env:
             - name: CONDUCTOR_URL
-              value: "https://debezium-platform-api.tech.nexusplatform.com.br"
+              value: "https://debezium-platform.tech.nexusplatform.com.br"

@@ -31,6 +31,9 @@ spec:
             - name: http
               containerPort: 4000
               protocol: TCP
+            - name: sql
+              containerPort: 15432
+              protocol: TCP
           envFrom:
             - configMapRef:
                 name: cube-config

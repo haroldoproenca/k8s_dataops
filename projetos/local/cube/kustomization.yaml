@@ -6,8 +6,9 @@ namespace: cube
 resources:
   - ../../../bases/cube
   - httproute.yaml
-  - certificate.yaml
-  - reference-grant.yaml
+  - cube-schema-configmap.yaml
+  # certificate e reference-grant omitidos: Gateway já tem wildcard-tech-tls-secret
+  # cobrindo *.tech.nexusplatform.com.br no listener tech-https
 
 patches:
   - path: configmap.yaml
@@ -16,3 +17,5 @@ patches:
   - path: cube-refresh-worker-deployment.yaml
   - path: cubestore-router-deployment.yaml
   - path: cubestore-worker-statefulset.yaml
+  - path: cubeapi-pvc.yaml
+  - path: cubestore-pvc.yaml

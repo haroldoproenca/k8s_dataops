@@ -2,12 +2,12 @@ apiVersion: gateway.networking.k8s.io/v1beta1
 kind: ReferenceGrant
 metadata:
   name: allow-gateway-cert-ref
-  namespace: nexus-api
+  namespace: nexus-api-teste
 spec:
   from:
   - group: gateway.networking.k8s.io
     kind: Gateway
-    namespace: nexus-webapp
+    namespace: nexus-webapp-teste
   to:
   - group: ""
     kind: Secret

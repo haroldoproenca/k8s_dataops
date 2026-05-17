@@ -9,7 +9,7 @@ spec:
       namespace: nginx-gateway
       sectionName: https
   hostnames:
-    - "debezium-platform-api.nexusplatform.com.br"
+    - "debezium-platform-api.tech.nexusplatform.com.br"
   rules:
     - matches:
         - path:

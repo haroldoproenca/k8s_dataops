@@ -4,13 +4,19 @@ kind: ConfigMap
 metadata:
   name: cube-config
 data:
-  # RisingWave local — ajuste o namespace/serviço se diferente
+  # RisingWave local — porta 4567 (Operator v0.15)
   CUBEJS_DB_HOST: "risingwave-frontend.risingwave.svc.cluster.local"
-  CUBEJS_DB_PORT: "4566"
+  CUBEJS_DB_PORT: "4567"
 
   # Dev mode expõe playground em localhost:4000
   CUBEJS_DEV_MODE: "true"
   CUBEJS_LOG_LEVEL: "info"
+
+  # Cube 1.x busca modelos em subdir "model" por padrão — "." aponta para raiz do conf
+  CUBEJS_SCHEMA_PATH: "."
+
+  # CubeStore: cube-api conecta na porta HTTP/WebSocket (3030), não na meta (9999)
+  CUBEJS_CUBESTORE_PORT: "3030"
 
   # 1 worker em local (RWO PVC num único nó K3d)
   CUBESTORE_WORKERS: "cubestore-worker-0.cubestore-worker:10001"

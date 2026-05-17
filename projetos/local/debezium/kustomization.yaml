@@ -5,3 +5,7 @@ namespace: debezium
 
 resources:
   - ../../../bases/debezium/3.5
+
+patches:
+  - path: debezium-patch.yaml
+  - path: crd-role-patch.yaml

@@ -1,0 +1,46 @@
+# HTTPRoute Marquez Web UI
+# Acesso: http://marquez.tech.nexusplatform.com.br (K3D local — sem TLS)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: marquez-web
+  namespace: marquez
+spec:
+  parentRefs:
+  - name: nexus-gateway
+    namespace: nginx-gateway
+    sectionName: tech-https
+  hostnames:
+  - "marquez.tech.nexusplatform.com.br"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: marquez-web
+      port: 80
+---
+# HTTPRoute Marquez API
+# Usado por: scripts externos (notebook Ubuntu), Debezium OpenLineage push
+# Acesso: http://marquez-api.tech.nexusplatform.com.br (K3D local — sem TLS)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: marquez-api
+  namespace: marquez
+spec:
+  parentRefs:
+  - name: nexus-gateway
+    namespace: nginx-gateway
+    sectionName: tech-https
+  hostnames:
+  - "marquez-api.tech.nexusplatform.com.br"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: marquez
+      port: 80

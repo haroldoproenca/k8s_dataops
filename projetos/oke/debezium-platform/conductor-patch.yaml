@@ -13,7 +13,7 @@ spec:
           imagePullPolicy: Always
           env:
             - name: QUARKUS_HTTP_CORS_ORIGINS
-              value: "https://debezium-platform.nexusplatform.com.br"
+              value: "https://debezium-platform.tech.nexusplatform.com.br"
             - name: QUARKUS_DATASOURCE_JDBC_URL
               value: "jdbc:postgresql://postgres.debezium-platform.svc.cluster.local:5432/debezium"
             - name: QUARKUS_KUBERNETES_CLIENT_NAMESPACE

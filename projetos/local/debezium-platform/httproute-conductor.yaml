@@ -15,9 +15,21 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            set:
+              - name: Access-Control-Allow-Origin
+                value: "https://debezium-platform.tech.nexusplatform.com.br"
+              - name: Access-Control-Allow-Methods
+                value: "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+              - name: Access-Control-Allow-Headers
+                value: "Content-Type, Authorization, Accept"
+              - name: Access-Control-Allow-Credentials
+                value: "true"
       timeouts:
         request: 60s
         backendRequest: 60s
       backendRefs:
-        - name: conductor
-          port: 8080
+        - name: auth-proxy
+          port: 8081

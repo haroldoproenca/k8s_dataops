@@ -4,6 +4,7 @@ kind: Kustomization
 
 namespace: debezium
 resources:
+  - crd.yaml
   - clusterole.yaml
   - clusterolebinding.yaml
   - deployment.yaml

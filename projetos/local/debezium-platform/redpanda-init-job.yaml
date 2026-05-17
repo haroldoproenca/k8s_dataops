@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: redpanda-init
+  namespace: debezium-platform
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: init
+          image: curlimages/curl:8.6.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              CONDUCTOR="http://conductor.debezium-platform.svc.cluster.local:8080"
+              echo "Aguardando conductor..."
+              until curl -sf "${CONDUCTOR}/api/destinations" > /dev/null; do
+                sleep 10
+              done
+              echo "Conductor pronto. Registrando Redpanda como destino Kafka..."
+              # Skip if destination already exists
+              EXISTING=$(curl -sf "${CONDUCTOR}/api/destinations" | grep -c '"redpanda-local"' 2>/dev/null || echo 0)
+              if [ "$EXISTING" -gt "0" ]; then
+                echo "Redpanda já registrado. Nada a fazer."
+                exit 0
+              fi
+              HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
+                -X POST "${CONDUCTOR}/api/destinations" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "name": "redpanda-local",
+                  "type": "kafka",
+                  "schema": "io.debezium.server.kafka.KafkaChangeConsumer",
+                  "config": {
+                    "bootstrap.servers": "redpanda-0.redpanda.redpanda.svc.cluster.local:9093"
+                  }
+                }')
+              echo "HTTP $HTTP"
+              [ "$HTTP" = "200" ] || [ "$HTTP" = "201" ] && echo "Redpanda registrado." || echo "Aviso HTTP $HTTP — verificar formato da API"

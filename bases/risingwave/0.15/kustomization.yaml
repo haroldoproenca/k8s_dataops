@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: risingwave
+
+resources:
+  - namespace.yaml
+  - minio-secret.yaml
+  - minio-pvc.yaml
+  - minio-deployment.yaml
+  - minio-service.yaml
+  - metastore-pg-secret.yaml
+  - risingwave.yaml

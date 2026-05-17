@@ -1,0 +1,20 @@
+# Patch k3d local — sem nodeSelector arm64, recursos dev, auto-instala CRD
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: debezium-operator
+spec:
+  template:
+    spec:
+      containers:
+        - name: debezium-operator
+          env:
+            - name: QUARKUS_OPERATOR_SDK_CRD_APPLY
+              value: "true"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

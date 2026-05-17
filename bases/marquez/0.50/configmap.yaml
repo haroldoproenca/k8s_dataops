@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: marquez-config
+  namespace: marquez
+  labels:
+    app.kubernetes.io/name: marquez
+    app.kubernetes.io/component: marquez
+data:
+  config.yml: |-
+    server:
+      applicationConnectors:
+      - type: http
+        port: ${MARQUEZ_PORT}
+        httpCompliance: RFC7230_LEGACY
+      adminConnectors:
+      - type: http
+        port: ${MARQUEZ_ADMIN_PORT}
+
+    db:
+      driverClass: org.postgresql.Driver
+      url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+      user: ${POSTGRES_USER}
+      password: ${POSTGRES_PASSWORD}
+
+    dbRetention:
+      frequencyMins: 15
+      numberOfRowsPerBatch: 1000
+      retentionDays: 7
+
+    migrateOnStartup: ${MIGRATE_ON_STARTUP}
+
+    logging:
+      level: ${LOG_LEVEL}
+      appenders:
+        - type: console

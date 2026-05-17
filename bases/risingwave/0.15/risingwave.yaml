@@ -1,0 +1,85 @@
+apiVersion: risingwave.risingwavelabs.com/v1alpha1
+kind: RisingWave
+metadata:
+  name: risingwave
+spec:
+  # Imagem: docker-compose usa v2.7.1 como release estável
+  image: risingwavelabs/risingwave:v2.7.1
+
+  # Metadados no PostgreSQL externo (host Ubuntu, acessível via host.k3d.internal no k3d)
+  metaStore:
+    postgresql:
+      host: host.k3d.internal
+      port: 5432
+      database: risingwave_meta
+      credentials:
+        secretName: risingwave-pg-secret
+        usernameKeyRef: username
+        passwordKeyRef: password
+
+  # Estado persistido no MinIO (S3-compatível)
+  stateStore:
+    minio:
+      endpoint: "minio-service.risingwave.svc.cluster.local:9000"
+      bucket: hummock001
+      credentials:
+        secretName: risingwave-minio-secret
+        usernameKeyRef: username
+        passwordKeyRef: password
+
+  components:
+    meta:
+      nodeGroups:
+        - name: ""
+          replicas: 1
+          template:
+            spec:
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "256Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "1Gi"
+
+    frontend:
+      nodeGroups:
+        - name: ""
+          replicas: 1
+          template:
+            spec:
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "256Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "1Gi"
+
+    compute:
+      nodeGroups:
+        - name: ""
+          replicas: 1
+          template:
+            spec:
+              resources:
+                requests:
+                  cpu: "500m"
+                  memory: "1Gi"
+                limits:
+                  cpu: "2000m"
+                  memory: "4Gi"
+
+    compactor:
+      nodeGroups:
+        - name: ""
+          replicas: 1
+          template:
+            spec:
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "256Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "1Gi"

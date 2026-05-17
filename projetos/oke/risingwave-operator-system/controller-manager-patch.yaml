@@ -1,0 +1,10 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: risingwave-operator-controller-manager
+  namespace: risingwave-operator-system
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64

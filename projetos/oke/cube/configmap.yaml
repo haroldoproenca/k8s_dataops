@@ -4,9 +4,9 @@ kind: ConfigMap
 metadata:
   name: cube-config
 data:
-  # RisingWave produção — ajuste namespace/serviço conforme o deploy
+  # RisingWave produção — porta 4567 (Operator v0.15)
   CUBEJS_DB_HOST: "risingwave-frontend.risingwave.svc.cluster.local"
-  CUBEJS_DB_PORT: "4566"
+  CUBEJS_DB_PORT: "4567"
 
   CUBEJS_DEV_MODE: "false"
   CUBEJS_LOG_LEVEL: "warn"
