@@ -1,0 +1,28 @@
+# Patch para o deployment principal do Superset (web)
+# Substitui a imagem placeholder e aponta Redis para o serviço in-cluster
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: superset
+  namespace: superset
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: superset
+        image: apache/superset:4.1.3
+        env:
+        - name: SUPERSET_CONFIG_PATH
+          value: /app/pythonpath/superset_config.py
+        - name: REDIS_HOST
+          value: redis-service
+        - name: REDIS_PORT
+          value: "6379"
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"

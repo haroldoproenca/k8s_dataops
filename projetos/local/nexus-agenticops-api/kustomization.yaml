@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nexus-agenticops
+
+resources:
+  - ../../../bases/nexus-agenticops-api
+  - httproute-api.yaml
+  - httproute-langfuse.yaml
+  - httproute-litellm.yaml
+  - certificate-api.yaml
+  - certificate-langfuse.yaml
+  - certificate-litellm.yaml
+  - reference-grant.yaml
+  # KEDA — descomente após instalar: helm install keda kedacore/keda -n keda --create-namespace
+  # Antes de aplicar, remova o HPA do worker (hpa.yaml na base) para evitar conflito.
+  #- keda-rbac.yaml
+  #- keda-scaledobject.yaml
+
+patches:
+  - path: configmap.yaml
+  - path: litellm-configmap.yaml
+  - path: secret.yaml
+  - path: agents-api-deployment.yaml
+  - path: arq-worker-deployment.yaml

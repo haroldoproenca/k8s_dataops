@@ -15,3 +15,7 @@ data:
   MINIO_SECURE: "false"
 
   ENVIRONMENT: "local"
+
+  # ClickHouse — L5 Harness (alinha infra declarada com consumo futuro no Python)
+  CLICKHOUSE_HOST: "clickhouse-service.nexus-agenticops.svc.cluster.local"
+  CLICKHOUSE_PORT: "8123"

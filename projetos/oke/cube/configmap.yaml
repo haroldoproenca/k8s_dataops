@@ -1,0 +1,15 @@
+# Strategic merge patch — produção OKE
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cube-config
+data:
+  # RisingWave produção — porta 4567 (Operator v0.15)
+  CUBEJS_DB_HOST: "risingwave-frontend.risingwave.svc.cluster.local"
+  CUBEJS_DB_PORT: "4567"
+
+  CUBEJS_DEV_MODE: "false"
+  CUBEJS_LOG_LEVEL: "warn"
+
+  # 2 workers em produção OKE (ReadWriteMany via oci-fss)
+  CUBESTORE_WORKERS: "cubestore-worker-0.cubestore-worker:10001,cubestore-worker-1.cubestore-worker:10001"

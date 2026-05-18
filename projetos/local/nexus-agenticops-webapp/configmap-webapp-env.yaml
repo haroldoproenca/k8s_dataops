@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-agenticops-webapp-env
+  namespace: nexus-agenticops
+data:
+  env.js: |
+    window.__ENV = {
+      API_BASE_URL: 'https://hark-api.tech.nexusplatform.com.br',
+    }

@@ -1,0 +1,19 @@
+# Strategic merge patch — K3d local-first
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cubestore-worker
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: cubestore-worker
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "768Mi"

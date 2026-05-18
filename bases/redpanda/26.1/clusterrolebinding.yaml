@@ -1,0 +1,90 @@
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: redpanda-controller
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.1.3
+    helm.sh/chart: operator-26.1.3
+  name: redpanda-controller-operator-redpanda
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: redpanda-controller-operator-redpanda
+subjects:
+- kind: ServiceAccount
+  name: redpanda-controller-operator
+  namespace: redpanda
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: redpanda-controller
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.1.3
+    helm.sh/chart: operator-26.1.3
+  name: redpanda-controller-operator-additional-controllers-redpanda
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: redpanda-controller-operator-additional-controllers-redpanda
+subjects:
+- kind: ServiceAccount
+  name: redpanda-controller-operator
+  namespace: redpanda
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+    helm.sh/hook-weight: "-10"
+  labels:
+    app.kubernetes.io/instance: redpanda-controller
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.1.3
+    helm.sh/chart: operator-26.1.3
+  name: redpanda-controller-operator-crd-job-redpanda
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: redpanda-controller-operator-crd-job-redpanda
+subjects:
+- kind: ServiceAccount
+  name: redpanda-controller-operator-crd-job
+  namespace: redpanda
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    helm.sh/hook: post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+    helm.sh/hook-weight: "-10"
+  labels:
+    app.kubernetes.io/instance: redpanda-controller
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.1.3
+    helm.sh/chart: operator-26.1.3
+  name: redpanda-controller-operator-migration-job-redpanda
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: redpanda-controller-operator-migration-job-redpanda
+subjects:
+- kind: ServiceAccount
+  name: redpanda-controller-operator-migration-job
+  namespace: redpanda

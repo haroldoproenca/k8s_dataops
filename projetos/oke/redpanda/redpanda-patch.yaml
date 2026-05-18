@@ -1,0 +1,23 @@
+# Strategic merge patch — OKE produção (ARM64, oci-bv, 3 brokers)
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Redpanda
+metadata:
+  name: redpanda
+spec:
+  clusterSpec:
+    external:
+      domain: ""
+    statefulset:
+      replicas: 3
+      initContainers:
+        setDataDirOwnership:
+          enabled: true
+      # arm64 obrigatório — workers OKE são ARM64
+      nodeSelector:
+        kubernetes.io/arch: arm64
+    storage:
+      persistentVolume:
+        size: 50Gi
+        storageClass: oci-bv
+    tls:
+      enabled: true

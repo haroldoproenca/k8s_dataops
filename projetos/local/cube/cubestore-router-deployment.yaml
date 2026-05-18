@@ -1,0 +1,18 @@
+# Strategic merge patch — K3d local-first
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cubestore-router
+spec:
+  template:
+    spec:
+      containers:
+        - name: cubestore-router
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "768Mi"

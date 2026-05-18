@@ -1,0 +1,18 @@
+# Strategic merge patch — valores específicos do ambiente local (K3d)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-agenticops-config
+data:
+  # CORS — inclui API pública + webapp local + webapp público
+  CORS_ORIGINS: "https://hark-api.tech.nexusplatform.com.br,https://hark.tech.nexusplatform.com.br,http://localhost:5173,http://localhost:3000"
+
+  # MinIO local (ClusterIP do K3d)
+  MINIO_ENDPOINT: "minio-service:9000"
+  MINIO_SECURE: "false"
+
+  ENVIRONMENT: "local"
+
+  # ClickHouse — FQDN para referência interna (L5 Harness: alinha infra com código)
+  CLICKHOUSE_HOST: "clickhouse-service.nexus-agenticops.svc.cluster.local"
+  CLICKHOUSE_PORT: "8123"

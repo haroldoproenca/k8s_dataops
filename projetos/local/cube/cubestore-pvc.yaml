@@ -1,0 +1,13 @@
+# Strategic merge patch — K3d usa local-path (RWO, single-node)
+# Router e worker compartilham este PVC — funciona em K3d por ser single-node
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cubestore-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi

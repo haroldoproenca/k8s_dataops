@@ -1,0 +1,36 @@
+# Strategic merge patch — K3d local-first
+# 1 broker: evita problema de podAntiAffinity em cluster single-node
+# TLS desabilitado para simplificar o dev local
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Redpanda
+metadata:
+  name: redpanda
+spec:
+  clusterSpec:
+    # --------------------------------------------------------
+    # ADICIONE O BLOCO 'CONFIG' AQUI PARA DESABILITAR FEATURES
+    # --------------------------------------------------------
+    config:
+      cluster:
+        audit_enabled: false
+        partition_autobalancing_mode: "node_add"
+        core_balancing_continuous: false
+        cloud_storage_enable_remote_read: false
+        enable_schema_id_validation: false
+        cloud_storage_enabled: false
+      node:
+        fips_mode: "disabled"
+    # --------------------------------------------------------
+    
+    external:
+      domain: ""
+    statefulset:
+      replicas: 1
+      initContainers:
+        setDataDirOwnership:
+          enabled: true
+    storage:
+      persistentVolume:
+        size: 5Gi
+    tls:
+      enabled: false

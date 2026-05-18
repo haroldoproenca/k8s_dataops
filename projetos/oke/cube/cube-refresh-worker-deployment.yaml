@@ -1,0 +1,27 @@
+# Strategic merge patch — OKE produção (ARM64, resources de produção)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cube-refresh-worker
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      containers:
+        - name: cube-refresh-worker
+          image: cubejs/cube:latest
+          imagePullPolicy: Always
+          env:
+            - name: CUBEJS_REFRESH_WORKER
+              value: "true"
+            # Ajustar heap ao limite de memória (6144MB)
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=6144"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "2Gi"
+            limits:
+              cpu: "2000m"
+              memory: "6Gi"

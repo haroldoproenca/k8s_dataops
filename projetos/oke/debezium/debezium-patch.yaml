@@ -1,0 +1,20 @@
+# Strategic merge patch — OKE produção (ARM64, 1 replica)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: debezium-operator
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      containers:
+        - name: debezium-operator
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

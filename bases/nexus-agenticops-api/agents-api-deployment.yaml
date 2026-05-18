@@ -1,0 +1,53 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-agenticops-api-deployment
+  labels:
+    app.kubernetes.io/name: nexus-agenticops-api
+    app.kubernetes.io/component: nexus-agenticops-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nexus-agenticops-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nexus-agenticops-api
+        app.kubernetes.io/component: nexus-agenticops-api
+    spec:
+      containers:
+        - name: nexus-agenticops-api-container
+          image: ghcr.io/haroldoproenca/nexus-agenticops-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          # api.main:app — caminho correto após split do monorepo
+          command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+          envFrom:
+            - configMapRef:
+                name: nexus-agenticops-config
+            - secretRef:
+                name: nexus-agenticops-secrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          # resources:
+          #   requests:
+          #     cpu: "100m"
+          #     memory: "128Mi"
+          #   limits:
+          #     cpu: "500m"
+          #     memory: "512Mi"

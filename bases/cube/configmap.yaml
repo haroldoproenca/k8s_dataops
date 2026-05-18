@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cube-config
+data:
+  # Data source — RisingWave (Kappa Architecture, PostgreSQL wire protocol :4567)
+  CUBEJS_DB_TYPE: "postgres"
+  CUBEJS_DB_HOST: "risingwave-frontend.risingwave.svc.cluster.local"
+  CUBEJS_DB_PORT: "4567"
+  CUBEJS_DB_NAME: "dev"
+  CUBEJS_DB_SSL: "false"
+
+  # CubeStore coordination — cube-api conecta ao router via HTTP/WebSocket (3030)
+  CUBEJS_CUBESTORE_HOST: "cubestore-router"
+  CUBEJS_CUBESTORE_PORT: "3030"
+
+  # CubeStore cluster members — 1 worker (base/local); patch para 2 no OKE
+  CUBESTORE_WORKERS: "cubestore-worker-0.cubestore-worker:10001"
+  CUBESTORE_REMOTE_DIR: "/cube/data"
+
+  # Cube SQL API — PostgreSQL wire protocol para Superset e agentes AI
+  CUBEJS_SQL_PORT: "15432"
+
+  # Observability
+  CUBEJS_DEV_MODE: "false"
+  CUBEJS_LOG_LEVEL: "warn"
+  CUBEJS_DEFAULT_API_SCOPES: "graphql,meta,data,jobs"

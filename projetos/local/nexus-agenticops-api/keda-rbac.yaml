@@ -1,0 +1,12 @@
+# TriggerAuthentication: permite que o KEDA autentique no Redis com a senha do Secret.
+# Requer KEDA instalado: helm install keda kedacore/keda -n keda --create-namespace
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: redis-trigger-auth
+  namespace: nexus-agenticops
+spec:
+  secretTargetRef:
+    - parameter: password
+      name: nexus-agenticops-secrets
+      key: REDIS_PASSWORD

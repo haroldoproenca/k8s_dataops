@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marquez
+  namespace: marquez
+spec:
+  template:
+    spec:
+      containers:
+      - name: marquez
+        env:
+        - name: POSTGRES_HOST
+          value: CHANGE_ME_POSTGRES_HOST
+        - name: POSTGRES_DB
+          value: marquez
+        - name: POSTGRES_USER
+          value: marquez
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"

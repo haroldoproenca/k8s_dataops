@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marquez
+  namespace: marquez
+spec:
+  template:
+    spec:
+      containers:
+      - name: marquez
+        env:
+        - name: POSTGRES_HOST
+          value: host.k3d.internal
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "1Gi"

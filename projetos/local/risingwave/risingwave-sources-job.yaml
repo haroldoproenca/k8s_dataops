@@ -1,0 +1,105 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: risingwave-sources-init
+  namespace: risingwave
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: psql-init
+          image: postgres:16-alpine
+          env:
+            - name: PGPASSWORD
+              value: ""
+            - name: PGHOST
+              value: risingwave-frontend.risingwave.svc.cluster.local
+            - name: PGPORT
+              value: "4567"
+            - name: PGUSER
+              value: root
+            - name: PGDATABASE
+              value: dev
+            - name: REDPANDA_BOOTSTRAP
+              value: redpanda-0.redpanda.redpanda.svc.cluster.local:9093
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Aguardando RisingWave frontend..."
+              until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER"; do
+                sleep 5
+              done
+              echo "RisingWave pronto. Criando SOURCEs e Materialized Views..."
+
+              psql <<SQL
+
+              -- -------------------------------------------------------
+              -- SOURCE: test.events (JSON plano — valida conexão Redpanda)
+              -- -------------------------------------------------------
+              CREATE SOURCE IF NOT EXISTS source_test_events (
+                  id      BIGINT,
+                  value   VARCHAR,
+                  ts      TIMESTAMPTZ
+              )
+              WITH (
+                  connector                   = 'kafka',
+                  topic                       = 'test.events',
+                  properties.bootstrap.server = '${REDPANDA_BOOTSTRAP}',
+                  scan.startup.mode           = 'earliest'
+              )
+              FORMAT PLAIN ENCODE JSON;
+
+              -- -------------------------------------------------------
+              -- MV: agrega eventos de teste por id
+              -- -------------------------------------------------------
+              CREATE MATERIALIZED VIEW IF NOT EXISTS mv_test_events AS
+              SELECT
+                  id,
+                  value,
+                  ts
+              FROM source_test_events;
+
+              -- -------------------------------------------------------
+              -- SOURCE TEMPLATE: tópico CDC Debezium (descomente quando
+              -- o pipeline Debezium Platform criar o tópico real)
+              -- Nomeação: {pipeline-name}.{schema}.{tabela}
+              --
+              -- CREATE SOURCE IF NOT EXISTS source_cdc_pagamentos (
+              --     id          BIGINT,
+              --     tenant_id   INT,
+              --     valor       DECIMAL,
+              --     status      VARCHAR,
+              --     created_at  TIMESTAMPTZ
+              -- )
+              -- WITH (
+              --     connector                   = 'kafka',
+              --     topic                       = 'nexus.public.pagamentos',
+              --     properties.bootstrap.server = '${REDPANDA_BOOTSTRAP}',
+              --     scan.startup.mode           = 'earliest'
+              -- )
+              -- FORMAT DEBEZIUM ENCODE JSON;
+              --
+              -- CREATE MATERIALIZED VIEW IF NOT EXISTS mv_faturamento_por_tenant AS
+              -- SELECT
+              --     tenant_id,
+              --     date_trunc('month', created_at) AS mes,
+              --     SUM(valor)                       AS receita_total,
+              --     COUNT(*)                         AS qtd_pagamentos
+              -- FROM source_cdc_pagamentos
+              -- WHERE status != 'cancelado'
+              -- GROUP BY tenant_id, date_trunc('month', created_at);
+              -- -------------------------------------------------------
+
+              SQL
+
+              echo "Verificando SOURCEs criadas:"
+              psql -c "SELECT name, connector FROM rw_catalog.rw_sources;"
+
+              echo "Verificando Materialized Views:"
+              psql -c "SELECT name FROM rw_catalog.rw_materialized_views;"
+
+              echo "Configuração concluída."

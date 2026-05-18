@@ -1,0 +1,13 @@
+# Patch stage (frontend) para ambiente local (K3d)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stage
+spec:
+  template:
+    spec:
+      containers:
+        - name: stage
+          env:
+            - name: CONDUCTOR_URL
+              value: "https://debezium-platform.tech.nexusplatform.com.br"

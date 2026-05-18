@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cube-api
+  labels:
+    app: cube-api
+spec:
+  type: ClusterIP
+  selector:
+    app: cube-api
+  ports:
+    - name: http
+      port: 4000
+      targetPort: 4000
+      protocol: TCP
+    # PostgreSQL wire protocol — Superset e agentes AI conectam aqui
+    - name: sql
+      port: 15432
+      targetPort: 15432
+      protocol: TCP

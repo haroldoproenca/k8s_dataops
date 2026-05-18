@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: debezium-platform
+
+resources:
+  - ../../../bases/debezium-platform/3.5
+  - secret.yaml
+  - auth-proxy-secret.yaml
+  - auth-proxy-configmap.yaml
+  - auth-proxy-deployment.yaml
+  - auth-proxy-service.yaml
+  - postgres-statefulset.yaml
+  - postgres-service.yaml
+  - httproute-conductor.yaml
+  - httproute-stage.yaml
+  - certificate.yaml
+  - reference-grant.yaml
+  - redpanda-init-job.yaml
+  - debezium-crm-pipeline-job.yaml
+
+patches:
+  - path: conductor-patch.yaml
+  - path: stage-patch.yaml

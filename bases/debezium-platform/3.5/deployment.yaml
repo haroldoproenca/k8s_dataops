@@ -1,0 +1,175 @@
+---
+# Source: debezium-platform/charts/debezium-operator/templates/deployment.yaml
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  annotations:
+    app.quarkus.io/quarkus-version: "3.17.0"
+  labels:
+    app.kubernetes.io/name: "debezium-operator"
+    app.kubernetes.io/managed-by: "quarkus"
+  name: "debezium-operator"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "debezium-operator"
+  template:
+    metadata:
+      annotations:
+        app.quarkus.io/quarkus-version: "3.17.0"
+      labels:
+        app.kubernetes.io/managed-by: "quarkus"
+        app.kubernetes.io/name: "debezium-operator"
+    spec:
+      containers:
+      - env:
+        - name: "KUBERNETES_NAMESPACE"
+          valueFrom:
+            fieldRef:
+              fieldPath: "metadata.namespace"
+        - name: "QUARKUS_OPERATOR_SDK_CONTROLLERS_DEBEZIUMSERVER_NAMESPACES"
+          value: JOSDK_ALL_NAMESPACES
+        image: quay.io/debezium/operator:3.2.0.Beta1
+        imagePullPolicy: "Always"
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: "/q/health/live"
+            port: 8080
+            scheme: "HTTP"
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 10
+        name: "debezium-operator"
+        ports:
+        - containerPort: 8080
+          name: "http"
+          protocol: "TCP"
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: "/q/health/ready"
+            port: 8080
+            scheme: "HTTP"
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 10
+        startupProbe:
+          failureThreshold: 3
+          httpGet:
+            path: "/q/health/started"
+            port: 8080
+            scheme: "HTTP"
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 10
+      serviceAccountName: "debezium-operator"
+---
+# Source: debezium-platform/templates/conductor-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/name: conductor
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: debezium-platform
+    app.kubernetes.io/instance: debezium-platform
+    app.kubernetes.io/managed-by: Helm
+  name: conductor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: conductor
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations: {}
+      labels:
+        app.kubernetes.io/name: conductor
+    spec:
+      serviceAccountName: conductor-service-account
+      containers:
+        - name: conductor
+          image: quay.io/debezium/platform-conductor:nightly
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: QUARKUS_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: meu-secret-banco
+                  key: password
+            - name: QUARKUS_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: meu-secret-banco
+                  key: username
+            - name: CONDUCTOR_WATCHER_OFFSET_STORAGE_TYPE
+              value: io.debezium.storage.configmap.ConfigMapOffsetStore
+            - name: CONDUCTOR_WATCHER_OFFSET_STORAGE_CONFIG_CONFIGMAP_NAME
+              value: debezium-platform-offsets
+            - name: QUARKUS_HTTP_CORS_ORIGINS
+              value: "http://"
+            - name: QUARKUS_DATASOURCE_JDBC_URL
+              value: "jdbc:postgresql://postgres:5432/postgres"
+            - name: QUARKUS_KUBERNETES_CLIENT_NAMESPACE
+              value: default
+            # ORAS download mode
+            - name: CONDUCTOR_DESCRIPTORS_VOLUME_SOURCE
+              value: "false"
+            - name: CONDUCTOR_DESCRIPTORS_PATH
+              value: /opt/descriptors
+            - name: CONDUCTOR_DESCRIPTORS_IMAGE_REGISTRY
+              value: quay.io
+            - name: CONDUCTOR_DESCRIPTORS_IMAGE_NAME
+              value: debezium/debezium-descriptors
+            - name: CONDUCTOR_DESCRIPTORS_IMAGE_TAG
+              value: nightly
+            
+            
+      restartPolicy: Always
+---
+# Source: debezium-platform/templates/stage-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/name: stage
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: debezium-platform
+    app.kubernetes.io/instance: debezium-platform
+    app.kubernetes.io/managed-by: Helm
+  name: stage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: stage
+  template:
+    metadata:
+      annotations: {}
+      labels:
+        app.kubernetes.io/name: stage
+    spec:
+      containers:
+        - image: quay.io/debezium/platform-stage:nightly
+          imagePullPolicy: IfNotPresent
+          name: stage
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          env:
+            - name: CONDUCTOR_URL
+              value: "http://"
+      restartPolicy: Always
+

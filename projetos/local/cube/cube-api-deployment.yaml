@@ -1,0 +1,48 @@
+# Strategic merge patch — K3d local-first
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cube-api
+spec:
+  replicas: 1
+  template:
+    spec:
+      volumes:
+        - name: cube-conf
+          persistentVolumeClaim: null
+          configMap:
+            name: cube-schema
+      containers:
+        - name: cube-api
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "768Mi"
+          # K3D dev — Cube bloqueia event loop durante DB introspection; TCP evita falso kill
+          livenessProbe:
+            httpGet: null
+            tcpSocket:
+              port: 4000
+            initialDelaySeconds: 90
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 4000
+            initialDelaySeconds: 90
+            periodSeconds: 15
+            timeoutSeconds: 15
+            failureThreshold: 5
+          startupProbe:
+            tcpSocket:
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 18

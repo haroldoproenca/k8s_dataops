@@ -1,0 +1,22 @@
+# Strategic merge patch — OKE produção (ARM64, replicas e resources de produção)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cube-api
+spec:
+  replicas: 2
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      containers:
+        - name: cube-api
+          image: cubejs/cube:latest
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "3Gi"

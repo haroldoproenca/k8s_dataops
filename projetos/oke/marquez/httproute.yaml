@@ -1,0 +1,45 @@
+# HTTPRoute Marquez Web UI (OKE — TLS via wildcard cert no Gateway)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: marquez-web
+  namespace: marquez
+spec:
+  parentRefs:
+  - name: nexus-gateway
+    namespace: nginx-gateway
+    sectionName: https
+  hostnames:
+  - "marquez.nexusplatform.com.br"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: marquez-web
+      port: 80
+---
+# HTTPRoute Marquez API (OKE)
+# Usado por: emitters OpenLineage in-cluster (Debezium, CronJob bridge)
+# Para push externo (CI/CD, scripts), usar este endpoint com token de autenticação
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: marquez-api
+  namespace: marquez
+spec:
+  parentRefs:
+  - name: nexus-gateway
+    namespace: nginx-gateway
+    sectionName: https
+  hostnames:
+  - "marquez-api.nexusplatform.com.br"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: marquez
+      port: 80

@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marquez
+  namespace: marquez
+  labels:
+    app.kubernetes.io/name: marquez
+    app.kubernetes.io/component: marquez
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: marquez
+      app.kubernetes.io/component: marquez
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: marquez
+        app.kubernetes.io/component: marquez
+    spec:
+      serviceAccountName: default
+      containers:
+        - name: marquez
+          image: docker.io/marquezproject/marquez:0.51.1
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: marquez-volume
+              mountPath: /usr/src/app/config.yml
+              subPath: config.yml
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+            - name: http-admin
+              containerPort: 5001
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http-admin
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http-admin
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          env:
+            - name: MARQUEZ_PORT
+              value: "5000"
+            - name: MARQUEZ_ADMIN_PORT
+              value: "5001"
+            - name: MARQUEZ_CONFIG
+              value: /usr/src/app/config.yml
+            - name: POSTGRES_HOST
+              value: "OVERRIDE_IN_OVERLAY"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_DB
+              value: "marquez"
+            - name: POSTGRES_USER
+              value: "marquez"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: marquez
+                  key: marquez-db-password
+            - name: MIGRATE_ON_STARTUP
+              value: "true"
+            - name: LOG_LEVEL
+              value: "INFO"
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+      volumes:
+        - name: marquez-volume
+          configMap:
+            name: marquez-config

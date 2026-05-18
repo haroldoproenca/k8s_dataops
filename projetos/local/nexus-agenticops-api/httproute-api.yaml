@@ -1,0 +1,40 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: agents-api-route
+  namespace: nexus-agenticops
+spec:
+  parentRefs:
+    - name: nexus-gateway
+      namespace: nginx-gateway
+      sectionName: tech-https
+  hostnames:
+    - "hark-api.tech.nexusplatform.com.br"
+  rules:
+    # SSE — /flows/parse/stream exige timeout infinito (conexão longa de streaming)
+    # Esta regra deve vir ANTES da regra geral para ter precedência no match
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /flows/parse/stream
+          headers:
+            - type: Exact
+              name: Accept
+              value: text/event-stream
+      timeouts:
+        request: 0s          # sem timeout para SSE
+        backendRequest: 0s
+      backendRefs:
+        - name: nexus-agenticops-api-service
+          port: 80
+    # Regra geral — endpoints HTTP normais
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      timeouts:
+        request: 180s
+        backendRequest: 180s
+      backendRefs:
+        - name: nexus-agenticops-api-service
+          port: 80
