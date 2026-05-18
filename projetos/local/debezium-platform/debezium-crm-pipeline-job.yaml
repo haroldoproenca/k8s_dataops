@@ -1,0 +1,127 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: debezium-crm-pipeline-init
+  namespace: debezium-platform
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: init
+          image: curlimages/curl:8.6.0
+          env:
+            - name: CONDUCTOR
+              value: "http://conductor.debezium-platform.svc.cluster.local:8080"
+            - name: MYSQL_HOST
+              value: "host.k3d.internal"
+            - name: MYSQL_PORT
+              value: "33306"
+            - name: MYSQL_USER
+              value: "debezium_cdc"
+            - name: MYSQL_PASSWORD
+              value: "Deb3z1um_CDC_S3cure!"
+            - name: MYSQL_DATABASE
+              value: "teste_ndb"
+            - name: REDPANDA_BOOTSTRAP
+              value: "redpanda-0.redpanda.redpanda.svc.cluster.local:9093"
+            - name: SCHEMA_HISTORY_TOPIC
+              value: "nexus.schema-changes.teste_ndb"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Aguardando Conductor..."
+              until curl -sf "${CONDUCTOR}/api/destinations" > /dev/null; do
+                sleep 10
+              done
+              echo "Conductor pronto."
+
+              # ── Verificar se pipeline já existe ──────────────────────────────
+              EXISTING=$(curl -sf "${CONDUCTOR}/api/pipelines" | grep -c '"nexus-crm-teste"' 2>/dev/null || echo 0)
+              if [ "$EXISTING" -gt "0" ]; then
+                echo "Pipeline nexus-crm-teste já existe. Nada a fazer."
+                exit 0
+              fi
+
+              # ── Obter ID do destino Redpanda ──────────────────────────────────
+              echo "Obtendo ID do destino Redpanda..."
+              DEST_JSON=$(curl -sf "${CONDUCTOR}/api/destinations")
+              DEST_ID=$(echo "$DEST_JSON" | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')
+              if [ -z "$DEST_ID" ]; then
+                echo "ERRO: Nenhum destino Redpanda encontrado. Execute o redpanda-init-job primeiro."
+                exit 1
+              fi
+              echo "Destino Redpanda ID: $DEST_ID"
+
+              # ── Verificar / Registrar Source MySQL (CRM teste_ndb) ──────────────
+              echo "Verificando source MySQL existente..."
+              SOURCES_JSON=$(curl -sf "${CONDUCTOR}/api/sources")
+              SOURCE_ID=$(echo "$SOURCES_JSON" | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')
+
+              if [ -n "$SOURCE_ID" ]; then
+                echo "Source MySQL já existe (id=$SOURCE_ID). Reutilizando."
+              else
+                echo "Registrando source MySQL..."
+                SOURCE_HTTP=$(curl -s -o /tmp/source_resp.json -w "%{http_code}" \
+                  -X POST "${CONDUCTOR}/api/sources" \
+                  -H "Content-Type: application/json" \
+                  -d "{
+                    \"name\": \"mysql-crm-teste\",
+                    \"description\": \"MySQL CDC — Força de Vendas (teste_ndb)\",
+                    \"type\": \"io.debezium.connector.mysql.MySqlConnector\",
+                    \"schema\": \"io.debezium.connector.mysql.MySqlConnector\",
+                    \"config\": {
+                      \"database.hostname\": \"${MYSQL_HOST}\",
+                      \"database.port\": \"${MYSQL_PORT}\",
+                      \"database.user\": \"${MYSQL_USER}\",
+                      \"database.password\": \"${MYSQL_PASSWORD}\",
+                      \"database.server.id\": \"184054\",
+                      \"topic.prefix\": \"nexus\",
+                      \"database.include.list\": \"^${MYSQL_DATABASE}$\",
+                      \"table.include.list\": \"teste_ndb.opportunities,teste_ndb.customers,teste_ndb.opportunity_items,teste_ndb.catalog_items,teste_ndb.monthly_goals,teste_ndb.users\",
+                      \"snapshot.mode\": \"initial\",
+                      \"snapshot.locking.mode\": \"minimal\",
+                      \"decimal.handling.mode\": \"string\",
+                      \"time.precision.mode\": \"adaptive_time_microseconds\",
+                      \"include.schema.changes\": \"true\",
+                      \"schema.history.internal.kafka.topic\": \"${SCHEMA_HISTORY_TOPIC}\",
+                      \"schema.history.internal.kafka.bootstrap.servers\": \"${REDPANDA_BOOTSTRAP}\",
+                      \"openlineage.transport.type\": \"http\",
+                      \"openlineage.transport.url\": \"http://marquez.marquez.svc.cluster.local:80\",
+                      \"openlineage.transport.endpoint\": \"/api/v1/lineage\",
+                      \"openlineage.namespace\": \"mysql_teste_ndb\"
+                    }
+                  }")
+                echo "Source HTTP: $SOURCE_HTTP"
+                cat /tmp/source_resp.json
+                [ "$SOURCE_HTTP" = "200" ] || [ "$SOURCE_HTTP" = "201" ] || { echo "ERRO ao criar source"; exit 1; }
+                SOURCE_ID=$(cat /tmp/source_resp.json | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')
+              fi
+              echo "Source ID: $SOURCE_ID"
+
+              # ── Criar Pipeline CRM ────────────────────────────────────────────
+              echo "Criando pipeline nexus-crm-teste..."
+              PIPE_HTTP=$(curl -s -o /tmp/pipe_resp.json -w "%{http_code}" \
+                -X POST "${CONDUCTOR}/api/pipelines" \
+                -H "Content-Type: application/json" \
+                -d "{
+                  \"name\": \"nexus-crm-teste\",
+                  \"description\": \"Pipeline CDC CRM Força de Vendas → Redpanda (tenant: teste)\",
+                  \"source\": { \"id\": ${SOURCE_ID} },
+                  \"destination\": { \"id\": ${DEST_ID} },
+                  \"logLevel\": \"INFO\"
+                }")
+              echo "Pipeline HTTP: $PIPE_HTTP"
+              cat /tmp/pipe_resp.json
+              [ "$PIPE_HTTP" = "200" ] || [ "$PIPE_HTTP" = "201" ] && echo "Pipeline criado com sucesso." || echo "Aviso HTTP $PIPE_HTTP"
+
+              echo "Ingestão CDC configurada. Tópicos esperados:"
+              echo "  nexus.teste_ndb.opportunities"
+              echo "  nexus.teste_ndb.customers"
+              echo "  nexus.teste_ndb.opportunity_items"
+              echo "  nexus.teste_ndb.catalog_items"
+              echo "  nexus.teste_ndb.monthly_goals"
+              echo "  nexus.teste_ndb.users"

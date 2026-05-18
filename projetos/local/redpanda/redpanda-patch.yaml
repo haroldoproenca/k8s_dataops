@@ -7,6 +7,21 @@ metadata:
   name: redpanda
 spec:
   clusterSpec:
+    # --------------------------------------------------------
+    # ADICIONE O BLOCO 'CONFIG' AQUI PARA DESABILITAR FEATURES
+    # --------------------------------------------------------
+    config:
+      cluster:
+        audit_enabled: false
+        partition_autobalancing_mode: "node_add"
+        core_balancing_continuous: false
+        cloud_storage_enable_remote_read: false
+        enable_schema_id_validation: false
+        cloud_storage_enabled: false
+      node:
+        fips_mode: "disabled"
+    # --------------------------------------------------------
+    
     external:
       domain: ""
     statefulset:

@@ -8,6 +8,7 @@ resources:
 - namespace.yaml
 - redis.yaml
 - httproute.yaml
+- superset-crm-dashboard-job.yaml
 
 patches:
 - path: secrets.yaml

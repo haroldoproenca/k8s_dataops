@@ -1,0 +1,407 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: superset-crm-dashboard-init
+  namespace: superset
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: dashboard-creator
+          image: python:3.12-slim
+          env:
+            - name: SUPERSET_URL
+              value: "http://superset.superset.svc.cluster.local:8088"
+            - name: SUPERSET_ADMIN_USER
+              value: "admin"
+            - name: SUPERSET_ADMIN_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: superset-external-db-secret
+                  key: SUPERSET_ADMIN_PASSWORD
+                  optional: true
+            - name: CUBE_HOST
+              value: "cube-api.cube.svc.cluster.local"
+            - name: CUBE_PORT
+              value: "15432"
+            - name: CUBE_USER
+              value: "cube"
+            - name: CUBE_PASS
+              value: "cube"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              pip install requests -q
+              python3 - << 'PYEOF'
+              import os, sys, time, json, requests
+
+              BASE = os.environ["SUPERSET_URL"]
+              USER = os.environ.get("SUPERSET_ADMIN_USER", "admin")
+              PASS = os.environ.get("SUPERSET_ADMIN_PASS", "admin")
+              CUBE_HOST = os.environ["CUBE_HOST"]
+              CUBE_PORT = os.environ["CUBE_PORT"]
+              CUBE_USER = os.environ["CUBE_USER"]
+              CUBE_PASS = os.environ["CUBE_PASS"]
+
+              # Session persiste cookies entre requests (exigido pelo CSRF do Superset)
+              session = requests.Session()
+
+              # ── Aguardar Superset ─────────────────────────────────────────────
+              print("Aguardando Superset...")
+              for _ in range(30):
+                  try:
+                      r = session.get(f"{BASE}/health", timeout=5)
+                      if r.status_code == 200:
+                          break
+                  except Exception:
+                      pass
+                  time.sleep(10)
+
+              # ── Autenticação ──────────────────────────────────────────────────
+              print("Autenticando no Superset...")
+              r = session.post(f"{BASE}/api/v1/security/login", json={
+                  "username": USER, "password": PASS,
+                  "provider": "db", "refresh": True
+              })
+              r.raise_for_status()
+              token = r.json()["access_token"]
+
+              csrf = session.get(
+                  f"{BASE}/api/v1/security/csrf_token/",
+                  headers={"Authorization": f"Bearer {token}", "Referer": BASE},
+              )
+              csrf_token = csrf.json().get("result", "") if csrf.status_code == 200 else ""
+
+              H = {
+                  "Authorization": f"Bearer {token}",
+                  "Content-Type": "application/json",
+                  "X-CSRFToken": csrf_token,
+                  "Referer": BASE,
+              }
+
+              def api_post(path, body):
+                  resp = session.post(f"{BASE}{path}", headers=H, json=body)
+                  if resp.status_code not in (200, 201):
+                      print(f"AVISO {path}: {resp.status_code} — {resp.text[:300]}")
+                  return resp.json() if resp.status_code in (200, 201) else {}
+
+              def api_get(path):
+                  resp = session.get(f"{BASE}{path}", headers=H)
+                  return resp.json() if resp.status_code == 200 else {}
+
+              # ── 1. Cadastrar banco de dados Cube SQL API ──────────────────────
+              print("\n[1/4] Cadastrando banco de dados Cube SQL API...")
+              dbs = api_get("/api/v1/database/")
+              existing_db = next(
+                  (d for d in dbs.get("result", []) if d.get("database_name") == "Cube-Nexus"),
+                  None
+              )
+              if existing_db:
+                  db_id = existing_db["id"]
+                  print(f"  ✓ Banco já existe (id={db_id})")
+              else:
+                  resp = api_post("/api/v1/database/", {
+                      "database_name": "Cube-Nexus",
+                      "sqlalchemy_uri": f"postgresql+psycopg2://{CUBE_USER}:{CUBE_PASS}@{CUBE_HOST}:{CUBE_PORT}/cube_db",
+                      "expose_in_sqllab": True,
+                      "allow_run_async": True,
+                      "extra": json.dumps({
+                          "engine_params": {},
+                          "metadata_params": {},
+                          "schemas_allowed_for_file_upload": []
+                      })
+                  })
+                  db_id = resp.get("id") or resp.get("result", {}).get("id")
+                  print(f"  ✓ Banco criado (id={db_id})")
+
+              if not db_id:
+                  print("ERRO: Não foi possível obter db_id. Abortando.")
+                  sys.exit(1)
+
+              # ── 2. Cadastrar datasets (apontam para cubos do Cube Core) ────────
+              print("\n[2/4] Cadastrando datasets via Cube SQL API...")
+
+              # Mapeamento: nome_amigavel → nome_cubo_no_cube
+              DATASETS = [
+                  ("CrmKpisSnapshot",         "KPIs — Força de Vendas"),
+                  ("CrmGeradasPorMes",         "Oportunidades Geradas por Mês"),
+                  ("CrmFechamentosPorMes",     "Fechamentos por Mês"),
+                  ("CrmMetasMensais",          "Metas Mensais"),
+                  ("CrmFunilEstagios",         "Funil de Conversão"),
+                  ("CrmOportunidadesGanhas",   "Oportunidades Ganhas (Enriquecidas)"),
+                  ("CrmTopProdutos",           "Top 10 Produtos — 30 dias"),
+                  ("CrmAnalisePerdas",         "Análise de Perdas"),
+                  ("CrmPipelineProbabilidade", "Pipeline por Probabilidade"),
+                  ("CrmCohortSafra",           "Cohort de Safra"),
+                  ("CrmSafraCaixa",            "Safra vs. Caixa"),
+              ]
+
+              dataset_ids = {}
+              existing_ds = api_get("/api/v1/dataset/?q=(page_size:200)")
+              existing_map = {d["table_name"]: d["id"] for d in existing_ds.get("result", [])}
+
+              def get_or_create_dataset(cube_name):
+                  if cube_name in existing_map and existing_map[cube_name]:
+                      print(f"  ✓ Dataset {cube_name} já existe (id={existing_map[cube_name]})")
+                      return existing_map[cube_name]
+                  resp = session.post(f"{BASE}/api/v1/dataset/", headers=H, json={
+                      "database": db_id,
+                      "schema": "public",
+                      "table_name": cube_name,
+                      "sql": f'SELECT * FROM "{cube_name}"',
+                  })
+                  if resp.status_code in (200, 201):
+                      ds_id = resp.json().get("id") or resp.json().get("result", {}).get("id")
+                      print(f"  ✓ Dataset {cube_name} criado (id={ds_id})")
+                      return ds_id
+                  if resp.status_code == 422 and "already exists" in resp.text:
+                      # Buscar o dataset existente por table_name
+                      found = api_get(f"/api/v1/dataset/?q=(page_size:200)")
+                      for d in found.get("result", []):
+                          if d.get("table_name") == cube_name:
+                              print(f"  ✓ Dataset {cube_name} recuperado (id={d['id']})")
+                              return d["id"]
+                  print(f"  AVISO dataset {cube_name}: {resp.status_code} — {resp.text[:200]}")
+                  return None
+
+              for cube_name, friendly in DATASETS:
+                  dataset_ids[cube_name] = get_or_create_dataset(cube_name)
+
+              # ── 3. Criar gráficos ─────────────────────────────────────────────
+              print("\n[3/4] Criando gráficos...")
+
+              def create_chart(name, viz_type, cube_name, params, slice_name=None):
+                  ds_id = dataset_ids.get(cube_name)
+                  if not ds_id:
+                      print(f"  AVISO: dataset {cube_name} não encontrado, pulando {name}")
+                      return None
+                  resp = api_post("/api/v1/chart/", {
+                      "slice_name": slice_name or name,
+                      "viz_type": viz_type,
+                      "datasource_id": ds_id,
+                      "datasource_type": "table",
+                      "params": json.dumps(params),
+                      "description": f"{name} — Performance Comercial Nexus (via Cube)"
+                  })
+                  cid = resp.get("id") or resp.get("result", {}).get("id")
+                  print(f"  ✓ Gráfico '{name}' criado (id={cid})")
+                  return cid
+
+              chart_ids = []
+
+              # KPI Cards — Big Number (Cube já agrega, usar SUM pois 1 linha por tenant)
+              for col, label in [
+                  ("receita_fechada", "Receita Fechada"),
+                  ("pipeline_ativo",  "Pipeline Ativo"),
+                  ("win_rate_pct",    "Win Rate (%)"),
+                  ("ticket_medio",    "Ticket Médio"),
+              ]:
+                  cid = create_chart(
+                      label, "big_number_total", "CrmKpisSnapshot",
+                      {"metric": {"expressionType": "SIMPLE", "column": {"column_name": col},
+                                  "aggregate": "SUM", "label": label},
+                       "y_axis_format": ",.2f" if "pct" not in col else ".1%"}
+                  )
+                  if cid: chart_ids.append(cid)
+
+              # Desempenho Financeiro — Bar Chart mensal
+              cid = create_chart(
+                  "Desempenho Financeiro (R$)", "echarts_timeseries_bar", "CrmGeradasPorMes",
+                  {"metrics": [
+                      {"expressionType": "SIMPLE", "column": {"column_name": "valor_pipeline"},
+                       "aggregate": "SUM", "label": "Pipeline Gerado (R$)"},
+                  ],
+                   "x_axis": "mes_inicio",
+                   "groupby": [],
+                   "time_grain_sqla": "P1M",
+                   "adhoc_filters": []}
+              )
+              if cid: chart_ids.append(cid)
+
+              # Desempenho em Volume — Bar Chart
+              cid = create_chart(
+                  "Desempenho em Volume (Qtd)", "echarts_timeseries_bar", "CrmFechamentosPorMes",
+                  {"metrics": [
+                      {"expressionType": "SIMPLE", "column": {"column_name": "qtd_ganho"},
+                       "aggregate": "SUM", "label": "Ganhas"},
+                      {"expressionType": "SIMPLE", "column": {"column_name": "qtd_perdido"},
+                       "aggregate": "SUM", "label": "Perdidas"},
+                  ],
+                   "x_axis": "mes_inicio",
+                   "groupby": [],
+                   "time_grain_sqla": "P1M"}
+              )
+              if cid: chart_ids.append(cid)
+
+              # Funil de Conversão — Volume
+              cid = create_chart(
+                  "Funil de Conversão — Volume", "bar", "CrmFunilEstagios",
+                  {"metrics": [
+                      {"expressionType": "SIMPLE", "column": {"column_name": "qtd"},
+                       "aggregate": "SUM", "label": "Oportunidades"}
+                  ],
+                   "groupby": ["estagio"],
+                   "orientation": "horizontal"}
+              )
+              if cid: chart_ids.append(cid)
+
+              # Funil de Conversão — Receita
+              cid = create_chart(
+                  "Funil de Conversão — Receita", "bar", "CrmFunilEstagios",
+                  {"metrics": [
+                      {"expressionType": "SIMPLE", "column": {"column_name": "valor_total"},
+                       "aggregate": "SUM", "label": "Valor (R$)"}
+                  ],
+                   "groupby": ["estagio"],
+                   "orientation": "horizontal"}
+              )
+              if cid: chart_ids.append(cid)
+
+              # Top 10 Deals — Tabela (usa CrmOportunidadesGanhas)
+              cid = create_chart(
+                  "Top 10 Deals", "table", "CrmOportunidadesGanhas",
+                  {"all_columns": ["sequential_code", "nome_cliente", "receita",
+                                   "nome_vendedor", "data_fechamento"],
+                   "order_by_cols": [["receita", False]],
+                   "row_limit": 10}
+              )
+              if cid: chart_ids.append(cid)
+
+              # Top 10 Produtos — Bar Horizontal
+              cid = create_chart(
+                  "Top 10 Produtos — 30 dias", "bar", "CrmTopProdutos",
+                  {"metrics": [
+                      {"expressionType": "SIMPLE", "column": {"column_name": "qtd_vendida"},
+                       "aggregate": "SUM", "label": "Qtd. Vendida"}
+                  ],
+                   "groupby": ["nome_produto"],
+                   "orientation": "horizontal"}
+              )
+              if cid: chart_ids.append(cid)
+
+              # Safra vs Caixa — Mixed chart
+              cid = create_chart(
+                  "Análise de Fechamento — Safra vs. Caixa", "mixed_timeseries", "CrmSafraCaixa",
+                  {"metrics": [
+                      {"expressionType": "SIMPLE", "column": {"column_name": "valor_caixa"},
+                       "aggregate": "SUM", "label": "Fechados por Caixa (R$)"},
+                      {"expressionType": "SIMPLE", "column": {"column_name": "valor_safra"},
+                       "aggregate": "SUM", "label": "Retorno da Safra (R$)"},
+                  ],
+                   "metrics_b": [
+                       {"expressionType": "SIMPLE", "column": {"column_name": "taxa_conversao"},
+                        "aggregate": "AVG", "label": "Conversão da Safra (%)"},
+                   ],
+                   "x_axis": "mes",
+                   "time_grain_sqla": "P1M"}
+              )
+              if cid: chart_ids.append(cid)
+
+              # Análise de Perdas — Bar Horizontal
+              cid = create_chart(
+                  "Análise de Perdas — Motivos", "bar", "CrmAnalisePerdas",
+                  {"metrics": [
+                      {"expressionType": "SIMPLE", "column": {"column_name": "ocorrencias"},
+                       "aggregate": "SUM", "label": "Ocorrências"}
+                  ],
+                   "groupby": ["motivo"],
+                   "orientation": "horizontal",
+                   "row_limit": 10}
+              )
+              if cid: chart_ids.append(cid)
+
+              # Pipeline por Probabilidade — Bar Horizontal
+              cid = create_chart(
+                  "Pipeline — Distribuição por Probabilidade", "bar", "CrmPipelineProbabilidade",
+                  {"metrics": [
+                      {"expressionType": "SIMPLE", "column": {"column_name": "qtd_oportunidades"},
+                       "aggregate": "SUM", "label": "Oportunidades"}
+                  ],
+                   "groupby": ["faixa_probabilidade"],
+                   "orientation": "horizontal"}
+              )
+              if cid: chart_ids.append(cid)
+
+              # Cohort Safra — Mixed chart
+              cid = create_chart(
+                  "Cohort — Taxa de Conversão por Safra", "mixed_timeseries", "CrmCohortSafra",
+                  {"metrics": [
+                      {"expressionType": "SIMPLE", "column": {"column_name": "total_leads_safra"},
+                       "aggregate": "SUM", "label": "Leads na Safra"},
+                      {"expressionType": "SIMPLE", "column": {"column_name": "total_ganho_90_dias"},
+                       "aggregate": "SUM", "label": "Ganhos em 90 dias"},
+                  ],
+                   "metrics_b": [
+                       {"expressionType": "SIMPLE", "column": {"column_name": "taxa_conversao_pct"},
+                        "aggregate": "AVG", "label": "Taxa Conversão (%)"},
+                   ],
+                   "x_axis": "mes_safra",
+                   "time_grain_sqla": "P1M"}
+              )
+              if cid: chart_ids.append(cid)
+
+              # ── 4. Criar Dashboard ────────────────────────────────────────────
+              print("\n[4/4] Criando dashboard Performance Comercial...")
+
+              all_dashes = api_get("/api/v1/dashboard/?q=(page_size:100)")
+              existing_dash_list = [d for d in all_dashes.get("result", []) if d.get("slug") == "crm-performance-comercial"]
+              if existing_dash_list:
+                  dash_id = existing_dash_list[0]["id"]
+                  print(f"  ✓ Dashboard já existe (id={dash_id})")
+              else:
+                  resp = api_post("/api/v1/dashboard/", {
+                      "dashboard_title": "Performance Comercial — Força de Vendas",
+                      "slug": "crm-performance-comercial",
+                      "published": True,
+                      "position_json": json.dumps({
+                          "DASHBOARD_VERSION_KEY": "v2",
+                          "ROOT_ID": {"type": "ROOT", "id": "ROOT_ID", "children": ["GRID_ID"]},
+                          "GRID_ID": {"type": "GRID", "id": "GRID_ID", "children": []},
+                      }),
+                      "owners": [],
+                  })
+                  dash_id = resp.get("id") or resp.get("result", {}).get("id")
+                  print(f"  ✓ Dashboard criado (id={dash_id})")
+
+              # Associar gráficos ao dashboard via position_json (Superset 4.x)
+              valid_chart_ids = [cid for cid in chart_ids if cid]
+              if dash_id and valid_chart_ids:
+                  COLS = 4  # gráficos por linha
+                  position = {
+                      "DASHBOARD_VERSION_KEY": "v2",
+                      "ROOT_ID": {"type": "ROOT", "id": "ROOT_ID", "children": ["GRID_ID"]},
+                      "GRID_ID": {"type": "GRID", "id": "GRID_ID", "children": []},
+                  }
+                  rows = []
+                  for i in range(0, len(valid_chart_ids), COLS):
+                      row_id = f"ROW-{i // COLS + 1}"
+                      row_children = []
+                      for j, cid in enumerate(valid_chart_ids[i:i+COLS]):
+                          chart_key = f"CHART-{cid}"
+                          position[chart_key] = {
+                              "type": "CHART", "id": chart_key, "children": [],
+                              "meta": {"chartId": cid, "width": 24 // COLS, "height": 50, "sliceName": str(cid)}
+                          }
+                          row_children.append(chart_key)
+                      position[row_id] = {
+                          "type": "ROW", "id": row_id, "children": row_children,
+                          "meta": {"background": "BACKGROUND_TRANSPARENT"}
+                      }
+                      rows.append(row_id)
+                  position["GRID_ID"]["children"] = rows
+                  r = session.put(
+                      f"{BASE}/api/v1/dashboard/{dash_id}",
+                      headers=H,
+                      json={"position_json": json.dumps(position), "published": True},
+                  )
+                  if r.status_code in (200, 201):
+                      print(f"  ✓ {len(valid_chart_ids)} gráficos associados ao dashboard (layout grid)")
+                  else:
+                      print(f"  AVISO PUT layout: {r.status_code} — {r.text[:300]}")
+
+              print(f"\n  Dashboard id={dash_id} — Cube SQL API como fonte semântica")
+              print("\n✅ Setup do domínio CRM Força de Vendas concluído no Superset.")
+              PYEOF

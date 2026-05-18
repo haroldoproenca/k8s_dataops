@@ -3,16 +3,15 @@ kind: ConfigMap
 metadata:
   name: cube-schema
 data:
-  # Schema mínimo para RisingWave — impede auto-geração que bloqueia o event loop
-  # Cube lê este arquivo de /cube/conf/risingwave.yml
-  # Expanda com as Materialized Views reais do RisingWave (mv_faturamento_mensal, etc.)
+  # Schema Cube — RisingWave Streaming | Domínio CRM Força de Vendas
+  # Cobre todas as MVs criadas pelo risingwave-crm-sources-job.yaml
+  # RLS via queryRewrite em cube.js: injeta tenant_id do JWT em toda query
   risingwave.yml: |
     cubes:
+      # ── Cube Diagnóstico (manter para health-check) ────────────────
       - name: RisingWaveInfo
         sql: >
-          SELECT
-            'risingwave' AS source,
-            current_timestamp AS checked_at
+          SELECT 'risingwave' AS source, current_timestamp AS checked_at
         dimensions:
           - name: source
             sql: source
@@ -24,3 +23,468 @@ data:
         measures:
           - name: count
             type: count
+
+      # ── KPIs Snapshot — Força de Vendas ───────────────────────────
+      - name: CrmKpisSnapshot
+        sql_table: mv_crm_kpis_snapshot
+        description: >
+          KPIs consolidados em tempo real da força de vendas: receita fechada,
+          pipeline ativo, win rate e ticket médio. Fonte: oportunidades com
+          outcome=WON e stage=CLOSED. Latência < 1s via streaming RisingWave.
+
+        dimensions:
+          - name: tenant_id
+            sql: tenant_id
+            type: string
+            primary_key: true
+            description: "Identificador do tenant. Gerenciado pelo RLS do Cube — não filtrar manualmente."
+
+        measures:
+          - name: receita_fechada
+            sql: receita_fechada
+            type: sum
+            title: "Receita Fechada"
+            format: currency
+            description: "Soma do valor de todas as oportunidades ganhas (outcome=WON). Indica receita confirmada."
+
+          - name: pipeline_ativo
+            sql: pipeline_ativo
+            type: sum
+            title: "Pipeline Ativo"
+            format: currency
+            description: "Soma das oportunidades em estágios não-terminais (Qualificação, Proposta, Negociação)."
+
+          - name: win_rate_pct
+            sql: win_rate_pct
+            type: avg
+            title: "Win Rate (%)"
+            format: percent
+            description: "Taxa de conversão: ganhos / (ganhos + perdidos). Meta saudável: acima de 30%."
+
+          - name: ticket_medio
+            sql: ticket_medio
+            type: avg
+            title: "Ticket Médio"
+            format: currency
+            description: "Valor médio por oportunidade ganha. Queda indica downgrade ou mix de produtos mais baratos."
+
+          - name: qtd_ganhos
+            sql: qtd_ganhos
+            type: sum
+            title: "Qtd. Ganhos"
+            description: "Total de oportunidades fechadas como WON no período."
+
+          - name: qtd_perdidos
+            sql: qtd_perdidos
+            type: sum
+            title: "Qtd. Perdidos"
+            description: "Total de oportunidades fechadas como LOST no período."
+
+      # ── Oportunidades Ganhas (granular — para Top Deals e Cohort) ─
+      - name: CrmOportunidadesGanhas
+        sql_table: mv_crm_oportunidades_ganhas
+        description: >
+          Oportunidades fechadas como WON com dados enriquecidos: nome do cliente,
+          nome do vendedor, ciclo de venda em dias e canal de origem.
+          Use para ranking de deals, análise de vendedor e segmentação por canal.
+
+        dimensions:
+          - name: tenant_id
+            sql: tenant_id
+            type: string
+            primary_key: true
+
+          - name: oportunidade_id
+            sql: oportunidade_id
+            type: number
+
+          - name: sequential_code
+            sql: sequential_code
+            type: number
+            title: "Código"
+
+          - name: nome_cliente
+            sql: nome_cliente
+            type: string
+            title: "Cliente"
+            description: "Nome do cliente associado à oportunidade."
+
+          - name: nome_vendedor
+            sql: nome_vendedor
+            type: string
+            title: "Vendedor"
+            description: "Nome completo do usuário responsável pela oportunidade."
+
+          - name: canal_origem
+            sql: canal_origem
+            type: string
+            title: "Canal"
+            description: "Canal de origem da oportunidade (Campanha, Indicação, Site, Telefone, Outros)."
+
+          - name: data_fechamento
+            sql: data_fechamento
+            type: time
+            title: "Data Fechamento"
+
+          - name: created_at
+            sql: created_at
+            type: time
+            title: "Data Criação"
+
+        measures:
+          - name: count
+            type: count
+            title: "Qtd. Deals"
+
+          - name: receita
+            sql: valor_total
+            type: sum
+            title: "Receita"
+            format: currency
+            description: "Soma do valor das oportunidades ganhas no período selecionado."
+
+          - name: ticket_medio
+            sql: valor_total
+            type: avg
+            title: "Ticket Médio"
+            format: currency
+
+          - name: ciclo_medio_dias
+            sql: ciclo_dias
+            type: avg
+            title: "Ciclo Médio (dias)"
+            description: "Dias médios desde a criação até o fechamento. Redução indica eficiência no ciclo de venda."
+
+      # ── Geradas por Mês (para gráfico de desempenho — eixo criação) ─
+      - name: CrmGeradasPorMes
+        sql_table: mv_crm_geradas_por_mes
+        description: >
+          Volume e valor das oportunidades geradas por mês de criação.
+          Use no gráfico de Desempenho Financeiro e Desempenho em Volume.
+
+        dimensions:
+          - name: tenant_id
+            sql: tenant_id
+            type: string
+            primary_key: true
+
+          - name: mes_inicio
+            sql: mes_inicio
+            type: time
+            title: "Mês"
+
+        measures:
+          - name: qtd_abertas
+            sql: qtd_abertas
+            type: sum
+            title: "Oportunidades Geradas"
+            description: "Total de oportunidades criadas no mês, independente do resultado."
+
+          - name: valor_pipeline
+            sql: valor_pipeline
+            type: sum
+            title: "Valor Pipeline Gerado"
+            format: currency
+            description: "Soma do valor total das oportunidades geradas no mês."
+
+      # ── Fechamentos por Mês (para gráfico — eixo fechamento) ──────
+      - name: CrmFechamentosPorMes
+        sql_table: mv_crm_fechamentos_por_mes
+        description: >
+          Oportunidades fechadas (WON ou LOST) agrupadas pelo mês de fechamento efetivo.
+          Use para calcular receita realizada e comparar com metas.
+
+        dimensions:
+          - name: tenant_id
+            sql: tenant_id
+            type: string
+            primary_key: true
+
+          - name: mes_inicio
+            sql: mes_inicio
+            type: time
+            title: "Mês Fechamento"
+
+        measures:
+          - name: qtd_ganho
+            sql: qtd_ganho
+            type: sum
+            title: "Ganhas"
+
+          - name: qtd_perdido
+            sql: qtd_perdido
+            type: sum
+            title: "Perdidas"
+
+          - name: valor_ganho
+            sql: valor_ganho
+            type: sum
+            title: "Receita Fechada"
+            format: currency
+            description: "Valor total das oportunidades ganhas no mês de fechamento."
+
+      # ── Funil de Conversão por Estágio ────────────────────────────
+      - name: CrmFunilEstagios
+        sql_table: mv_crm_funil_estagios
+        description: >
+          Contagem e valor do pipeline por estágio do funil de vendas.
+          Estágios: QUALIFICATION, PROPOSAL, NEGOTIATION.
+          Use para identificar gargalos e calcular taxa de conversão entre etapas.
+
+        dimensions:
+          - name: tenant_id
+            sql: tenant_id
+            type: string
+            primary_key: true
+
+          - name: estagio
+            sql: estagio
+            type: string
+            title: "Estágio"
+            description: "Estágio atual no funil: QUALIFICATION, PROPOSAL ou NEGOTIATION."
+
+        measures:
+          - name: qtd
+            sql: qtd
+            type: sum
+            title: "Qtd. Oportunidades"
+
+          - name: valor_total
+            sql: valor_total
+            type: sum
+            title: "Valor Total"
+            format: currency
+
+          - name: probabilidade_media
+            sql: probabilidade_media
+            type: avg
+            title: "Probabilidade Média (%)"
+
+      # ── Top Produtos — últimos 30 dias ────────────────────────────
+      - name: CrmTopProdutos
+        sql_table: mv_crm_top_produtos_30d
+        description: >
+          Top 10 produtos/serviços mais vendidos (por quantidade) nos últimos 30 dias,
+          com receita associada. Atualizado em tempo real via streaming.
+
+        dimensions:
+          - name: tenant_id
+            sql: tenant_id
+            type: string
+            primary_key: true
+
+          - name: nome_produto
+            sql: nome_produto
+            type: string
+            title: "Produto / Serviço"
+
+          - name: tipo
+            sql: tipo
+            type: string
+            title: "Tipo"
+            description: "PRODUCT ou SERVICE."
+
+        measures:
+          - name: qtd_vendida
+            sql: qtd_vendida
+            type: sum
+            title: "Qtd. Vendida"
+
+          - name: valor_total
+            sql: valor_total
+            type: sum
+            title: "Receita"
+            format: currency
+
+      # ── Análise de Perdas — motivos ───────────────────────────────
+      - name: CrmAnalisePerdas
+        sql_table: mv_crm_analise_perdas
+        description: >
+          Distribuição dos motivos de perda de oportunidades nos últimos 90 dias.
+          Identifica os principais gargalos no processo comercial.
+
+        dimensions:
+          - name: tenant_id
+            sql: tenant_id
+            type: string
+            primary_key: true
+
+          - name: motivo
+            sql: motivo
+            type: string
+            title: "Motivo da Perda"
+
+        measures:
+          - name: ocorrencias
+            sql: ocorrencias
+            type: sum
+            title: "Ocorrências"
+
+          - name: percentual
+            sql: percentual
+            type: avg
+            title: "Percentual (%)"
+
+      # ── Pipeline por Probabilidade ────────────────────────────────
+      - name: CrmPipelineProbabilidade
+        sql_table: mv_crm_pipeline_probabilidade
+        description: >
+          Distribuição do pipeline ativo por faixa de probabilidade de fechamento.
+          Faixas: Muito Baixa (0-20%), Baixa (21-40%), Média (41-60%),
+          Alta (61-80%), Muito Alta (81-100%).
+
+        dimensions:
+          - name: tenant_id
+            sql: tenant_id
+            type: string
+            primary_key: true
+
+          - name: faixa_probabilidade
+            sql: faixa_probabilidade
+            type: string
+            title: "Faixa de Probabilidade"
+
+          - name: ordem
+            sql: ordem
+            type: number
+
+        measures:
+          - name: qtd_oportunidades
+            sql: qtd_oportunidades
+            type: sum
+            title: "Qtd. Oportunidades"
+
+          - name: valor_pipeline
+            sql: valor_pipeline
+            type: sum
+            title: "Valor Pipeline"
+            format: currency
+
+      # ── Cohort de Safra ───────────────────────────────────────────
+      - name: CrmCohortSafra
+        sql_table: mv_crm_cohort_safra
+        description: >
+          Análise de cohort por mês de criação (safra): total de leads gerados,
+          quantos fecharam em até 90 dias e a taxa de conversão resultante.
+          Identifica tendências de qualidade do pipeline ao longo do tempo.
+
+        dimensions:
+          - name: tenant_id
+            sql: tenant_id
+            type: string
+            primary_key: true
+
+          - name: mes_safra
+            sql: mes_safra
+            type: time
+            title: "Mês da Safra"
+
+        measures:
+          - name: total_leads_safra
+            sql: total_leads_safra
+            type: sum
+            title: "Leads na Safra"
+
+          - name: total_ganho_90_dias
+            sql: total_ganho_90_dias
+            type: sum
+            title: "Ganhos em 90 dias"
+
+          - name: taxa_conversao_pct
+            sql: taxa_conversao_pct
+            type: avg
+            title: "Taxa de Conversão (%)"
+            format: percent
+
+      # ── Safra vs. Caixa ───────────────────────────────────────────
+      - name: CrmSafraCaixa
+        sql_table: mv_crm_safra_caixa
+        description: >
+          Comparativo mensal entre oportunidades fechadas por Safra (mês de origem)
+          e por Caixa (mês de fechamento). A taxa de conversão mostra a eficiência
+          de cada coorte mensal. Cobre os últimos 12 meses.
+
+        dimensions:
+          - name: tenant_id
+            sql: tenant_id
+            type: string
+            primary_key: true
+
+          - name: mes
+            sql: mes
+            type: time
+            title: "Mês"
+
+        measures:
+          - name: qtd_safra
+            sql: qtd_safra
+            type: sum
+            title: "Retorno da Safra (Qtd)"
+            description: "Oportunidades WON cujo mês de criação = mês selecionado."
+
+          - name: valor_safra
+            sql: valor_safra
+            type: sum
+            title: "Retorno da Safra (R$)"
+            format: currency
+
+          - name: qtd_caixa
+            sql: qtd_caixa
+            type: sum
+            title: "Fechados por Caixa (Qtd)"
+            description: "Oportunidades WON cujo mês de fechamento = mês selecionado."
+
+          - name: valor_caixa
+            sql: valor_caixa
+            type: sum
+            title: "Fechados por Caixa (R$)"
+            format: currency
+
+          - name: total_criadas
+            sql: total_criadas
+            type: sum
+            title: "Total Criadas no Mês"
+
+          - name: taxa_conversao
+            sql: taxa_conversao
+            type: avg
+            title: "Conversão da Safra (%)"
+            format: percent
+
+      # ── Metas Mensais ─────────────────────────────────────────────
+      - name: CrmMetasMensais
+        sql_table: mv_crm_metas_mensais
+        description: >
+          Metas comerciais mensais cadastradas por tipo de KPI: FATURAMENTO,
+          QTDE_CLOSED_WON, VALOR_OPORTUNIDADES, etc. Use para sobrepor ao
+          desempenho realizado e calcular % de atingimento.
+
+        dimensions:
+          - name: tenant_id
+            sql: tenant_id
+            type: string
+            primary_key: true
+
+          - name: fiscal_year
+            sql: fiscal_year
+            type: number
+            title: "Ano Fiscal"
+
+          - name: month
+            sql: month
+            type: number
+            title: "Mês"
+
+          - name: kpi_type
+            sql: kpi_type
+            type: string
+            title: "KPI"
+            description: "Tipo do KPI: FATURAMENTO, QTDE_CLOSED_WON, VALOR_OPORTUNIDADES, etc."
+
+        measures:
+          - name: meta_total
+            sql: target_total
+            type: sum
+            title: "Meta"
+            format: currency
+            description: "Valor da meta consolidada para o mês e tipo de KPI."

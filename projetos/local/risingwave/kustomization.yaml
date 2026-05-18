@@ -6,5 +6,6 @@ namespace: risingwave
 resources:
   - ../../../bases/risingwave/0.15
   - risingwave-sources-job.yaml
+  - risingwave-crm-sources-job.yaml
   - dashboard-service.yaml
   - httproute-dashboard.yaml

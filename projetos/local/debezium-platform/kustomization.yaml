@@ -17,6 +17,7 @@ resources:
   - certificate.yaml
   - reference-grant.yaml
   - redpanda-init-job.yaml
+  - debezium-crm-pipeline-job.yaml
 
 patches:
   - path: conductor-patch.yaml

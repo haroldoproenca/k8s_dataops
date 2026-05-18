@@ -7,6 +7,7 @@ resources:
 - ../../../bases/marquez/0.50
 - secret.yaml
 - httproute.yaml
+- lineage-crm-job.yaml
 
 patches:
 - path: deployment-api-patch.yaml

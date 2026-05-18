@@ -1,0 +1,439 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: risingwave-crm-init
+  namespace: risingwave
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: psql-init
+          image: postgres:16-alpine
+          env:
+            - name: PGPASSWORD
+              value: ""
+            - name: PGHOST
+              value: risingwave-frontend.risingwave.svc.cluster.local
+            - name: PGPORT
+              value: "4567"
+            - name: PGUSER
+              value: root
+            - name: PGDATABASE
+              value: dev
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Aguardando RisingWave frontend..."
+              until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER"; do
+                sleep 5
+              done
+              echo "RisingWave pronto. Criando domínio CRM Força de Vendas (tenant: teste)..."
+
+              # RisingWave v0.15+: FORMAT DEBEZIUM requer CREATE TABLE (não CREATE SOURCE)
+              # A TABLE mantém o estado atual automaticamente: deletes são aplicados internamente.
+              # Não é necessário WHERE __op != 'd' nas MVs — a TABLE nunca contém linhas deletadas.
+
+              psql <<'SQL'
+
+              -- ================================================================
+              -- DOMÍNIO: CRM / FORÇA DE VENDAS — tenant: teste | DB: teste_ndb
+              -- Tópicos Redpanda: nexus.teste_ndb.*
+              -- RisingWave v0.15 — CREATE TABLE FORMAT DEBEZIUM ENCODE JSON
+              -- ================================================================
+
+              -- ──────────────────────────────────────────────────────────────────
+              -- 1. TABLE CDC — Debezium mantém estado atual automaticamente
+              --    PRIMARY KEY obrigatório; INCLUDE KEY mapeia chave Kafka → coluna
+              -- ──────────────────────────────────────────────────────────────────
+
+              CREATE TABLE IF NOT EXISTS src_oportunidades_teste (
+                  id                   BIGINT,
+                  sequential_code      INT,
+                  title                VARCHAR,
+                  customer_id          INT,
+                  branch_id            INT,
+                  stage                VARCHAR,
+                  probability          DOUBLE PRECISION,
+                  total_value          VARCHAR,
+                  origin               VARCHAR,
+                  owner_id             INT,
+                  outcome              VARCHAR,
+                  loss_reason          VARCHAR,
+                  lost_reason_category VARCHAR,
+                  is_active            BOOLEAN,
+                  payment_installments INT,
+                  created_at           TIMESTAMPTZ,
+                  stage_changed_at     TIMESTAMPTZ,
+                  updated_at           TIMESTAMPTZ,
+                  closed_at            TIMESTAMPTZ,
+                  PRIMARY KEY (id)
+              )
+              WITH (
+                  connector                   = 'kafka',
+                  topic                       = 'nexus.teste_ndb.opportunities',
+                  properties.bootstrap.server = 'redpanda-0.redpanda.redpanda.svc.cluster.local:9093',
+                  scan.startup.mode           = 'earliest'
+              )
+              FORMAT DEBEZIUM ENCODE JSON;
+
+              CREATE TABLE IF NOT EXISTS src_clientes_teste (
+                  id           BIGINT,
+                  name         VARCHAR,
+                  type         VARCHAR,
+                  email        VARCHAR,
+                  phone        VARCHAR,
+                  company_name VARCHAR,
+                  PRIMARY KEY (id)
+              )
+              WITH (
+                  connector                   = 'kafka',
+                  topic                       = 'nexus.teste_ndb.customers',
+                  properties.bootstrap.server = 'redpanda-0.redpanda.redpanda.svc.cluster.local:9093',
+                  scan.startup.mode           = 'earliest'
+              )
+              FORMAT DEBEZIUM ENCODE JSON;
+
+              CREATE TABLE IF NOT EXISTS src_itens_oportunidade_teste (
+                  id               BIGINT,
+                  opportunity_id   INT,
+                  catalog_item_id  INT,
+                  quantity         VARCHAR,
+                  applied_price    VARCHAR,
+                  PRIMARY KEY (id)
+              )
+              WITH (
+                  connector                   = 'kafka',
+                  topic                       = 'nexus.teste_ndb.opportunity_items',
+                  properties.bootstrap.server = 'redpanda-0.redpanda.redpanda.svc.cluster.local:9093',
+                  scan.startup.mode           = 'earliest'
+              )
+              FORMAT DEBEZIUM ENCODE JSON;
+
+              CREATE TABLE IF NOT EXISTS src_catalogo_itens_teste (
+                  id         BIGINT,
+                  name       VARCHAR,
+                  item_type  VARCHAR,
+                  sale_price VARCHAR,
+                  base_cost  VARCHAR,
+                  PRIMARY KEY (id)
+              )
+              WITH (
+                  connector                   = 'kafka',
+                  topic                       = 'nexus.teste_ndb.catalog_items',
+                  properties.bootstrap.server = 'redpanda-0.redpanda.redpanda.svc.cluster.local:9093',
+                  scan.startup.mode           = 'earliest'
+              )
+              FORMAT DEBEZIUM ENCODE JSON;
+
+              CREATE TABLE IF NOT EXISTS src_metas_mensais_teste (
+                  id           BIGINT,
+                  tenant_id    INT,
+                  branch_id    INT,
+                  user_id      INT,
+                  fiscal_year  INT,
+                  month        INT,
+                  kpi_type     VARCHAR,
+                  target_value VARCHAR,
+                  PRIMARY KEY (id)
+              )
+              WITH (
+                  connector                   = 'kafka',
+                  topic                       = 'nexus.teste_ndb.monthly_goals',
+                  properties.bootstrap.server = 'redpanda-0.redpanda.redpanda.svc.cluster.local:9093',
+                  scan.startup.mode           = 'earliest'
+              )
+              FORMAT DEBEZIUM ENCODE JSON;
+
+              CREATE TABLE IF NOT EXISTS src_usuarios_teste (
+                  id        BIGINT,
+                  full_name VARCHAR,
+                  email     VARCHAR,
+                  is_active BOOLEAN,
+                  PRIMARY KEY (id)
+              )
+              WITH (
+                  connector                   = 'kafka',
+                  topic                       = 'nexus.teste_ndb.users',
+                  properties.bootstrap.server = 'redpanda-0.redpanda.redpanda.svc.cluster.local:9093',
+                  scan.startup.mode           = 'earliest'
+              )
+              FORMAT DEBEZIUM ENCODE JSON;
+
+              -- ──────────────────────────────────────────────────────────────────
+              -- 2. Materialized Views — Domínio CRM / Força de Vendas
+              -- NOTA: CREATE TABLE FORMAT DEBEZIUM mantém estado atual.
+              --       Sem necessidade de WHERE __op != 'd'.
+              --       tenant_id = 'teste' injetado em todas as MVs (MySQL não tem
+              --       tenant_id nas tabelas de oportunidades/clientes).
+              -- ──────────────────────────────────────────────────────────────────
+
+              -- 2.1 KPIs Globais (snapshot corrente)
+              CREATE MATERIALIZED VIEW IF NOT EXISTS mv_crm_kpis_snapshot AS
+              SELECT
+                  'teste'::VARCHAR                                                                AS tenant_id,
+                  COALESCE(SUM(CASE WHEN outcome = 'WON' THEN CAST(total_value AS DECIMAL) ELSE 0 END), 0)  AS receita_fechada,
+                  COALESCE(SUM(CASE WHEN stage NOT IN ('CLOSED','CLOSED_WON','CLOSED_LOST','CANCELED')
+                                    THEN CAST(total_value AS DECIMAL) ELSE 0 END), 0)            AS pipeline_ativo,
+                  COUNT(CASE WHEN outcome = 'WON'  THEN 1 END)                                  AS qtd_ganhos,
+                  COUNT(CASE WHEN outcome = 'LOST' THEN 1 END)                                  AS qtd_perdidos,
+                  CASE
+                      WHEN COUNT(CASE WHEN outcome IN ('WON','LOST') THEN 1 END) > 0
+                      THEN ROUND(
+                          COUNT(CASE WHEN outcome = 'WON' THEN 1 END)::DECIMAL
+                          / COUNT(CASE WHEN outcome IN ('WON','LOST') THEN 1 END) * 100, 1
+                      )
+                      ELSE 0
+                  END AS win_rate_pct,
+                  CASE
+                      WHEN COUNT(CASE WHEN outcome = 'WON' THEN 1 END) > 0
+                      THEN ROUND(
+                          COALESCE(SUM(CASE WHEN outcome = 'WON' THEN CAST(total_value AS DECIMAL) ELSE 0 END), 0)
+                          / COUNT(CASE WHEN outcome = 'WON' THEN 1 END), 2
+                      )
+                      ELSE 0
+                  END AS ticket_medio
+              FROM src_oportunidades_teste
+              WHERE is_active = true;
+
+              -- 2.2 Geradas por mês (por data de criação)
+              CREATE MATERIALIZED VIEW IF NOT EXISTS mv_crm_geradas_por_mes AS
+              SELECT
+                  'teste'::VARCHAR                               AS tenant_id,
+                  date_trunc('month', created_at)                AS mes_inicio,
+                  COUNT(*)                                       AS qtd_abertas,
+                  COALESCE(SUM(CAST(total_value AS DECIMAL)), 0) AS valor_pipeline
+              FROM src_oportunidades_teste
+              WHERE is_active = true
+                AND created_at IS NOT NULL
+              GROUP BY date_trunc('month', created_at);
+
+              -- 2.3 Fechamentos por mês (por data efetiva de fechamento)
+              CREATE MATERIALIZED VIEW IF NOT EXISTS mv_crm_fechamentos_por_mes AS
+              SELECT
+                  'teste'::VARCHAR                                                      AS tenant_id,
+                  date_trunc('month',
+                      COALESCE(closed_at, stage_changed_at, updated_at))               AS mes_inicio,
+                  COUNT(CASE WHEN outcome = 'WON'  THEN 1 END)                         AS qtd_ganho,
+                  COUNT(CASE WHEN outcome = 'LOST' THEN 1 END)                         AS qtd_perdido,
+                  COALESCE(SUM(CASE WHEN outcome = 'WON'
+                      THEN CAST(total_value AS DECIMAL) ELSE 0 END), 0)                AS valor_ganho
+              FROM src_oportunidades_teste
+              WHERE is_active = true
+                AND stage = 'CLOSED'
+                AND COALESCE(closed_at, stage_changed_at, updated_at) IS NOT NULL
+              GROUP BY date_trunc('month', COALESCE(closed_at, stage_changed_at, updated_at));
+
+              -- 2.4 Metas mensais (lookup)
+              CREATE MATERIALIZED VIEW IF NOT EXISTS mv_crm_metas_mensais AS
+              SELECT
+                  'teste'::VARCHAR                                AS tenant_id,
+                  fiscal_year,
+                  month,
+                  kpi_type,
+                  COALESCE(SUM(CAST(target_value AS DECIMAL)), 0) AS target_total
+              FROM src_metas_mensais_teste
+              WHERE user_id IS NULL
+              GROUP BY fiscal_year, month, kpi_type;
+
+              -- 2.5 Funil de conversão por estágio (pipeline ativo)
+              CREATE MATERIALIZED VIEW IF NOT EXISTS mv_crm_funil_estagios AS
+              SELECT
+                  'teste'::VARCHAR                               AS tenant_id,
+                  stage                                          AS estagio,
+                  COUNT(*)                                       AS qtd,
+                  COALESCE(SUM(CAST(total_value AS DECIMAL)), 0) AS valor_total,
+                  AVG(probability)                               AS probabilidade_media
+              FROM src_oportunidades_teste
+              WHERE is_active = true
+                AND stage IN ('QUALIFICATION','PROPOSAL','NEGOTIATION')
+              GROUP BY stage;
+
+              -- 2.6 Oportunidades ganhas enriquecidas (JOIN streaming)
+              CREATE MATERIALIZED VIEW IF NOT EXISTS mv_crm_oportunidades_ganhas AS
+              SELECT
+                  'teste'::VARCHAR                                              AS tenant_id,
+                  o.id                                                          AS oportunidade_id,
+                  o.sequential_code,
+                  o.customer_id,
+                  o.owner_id,
+                  o.branch_id,
+                  CAST(o.total_value AS DECIMAL)                                AS valor_total,
+                  o.origin                                                      AS canal_origem,
+                  o.created_at,
+                  COALESCE(o.closed_at, o.stage_changed_at, o.updated_at)      AS data_fechamento,
+                  EXTRACT(EPOCH FROM (
+                      COALESCE(o.closed_at, o.stage_changed_at, o.updated_at) - o.created_at
+                  )) / 86400.0                                                  AS ciclo_dias,
+                  c.name                                                        AS nome_cliente,
+                  u.full_name                                                   AS nome_vendedor
+              FROM src_oportunidades_teste o
+              LEFT JOIN src_clientes_teste  c ON o.customer_id = c.id
+              LEFT JOIN src_usuarios_teste  u ON o.owner_id    = u.id
+              WHERE o.is_active = true
+                AND o.outcome   = 'WON'
+                AND o.stage     = 'CLOSED';
+
+              -- 2.7 Top 10 Deals — últimos 30 dias
+              CREATE MATERIALIZED VIEW IF NOT EXISTS mv_crm_top_deals_30d AS
+              SELECT
+                  'teste'::VARCHAR   AS tenant_id,
+                  oportunidade_id    AS id,
+                  sequential_code,
+                  nome_cliente       AS customer_name,
+                  valor_total        AS total_value,
+                  nome_vendedor      AS owner_name,
+                  data_fechamento    AS fechado_em
+              FROM mv_crm_oportunidades_ganhas
+              WHERE data_fechamento >= NOW() - INTERVAL '30 days'
+              ORDER BY valor_total DESC
+              LIMIT 10;
+
+              -- 2.8 Top 10 Produtos — últimos 30 dias
+              CREATE MATERIALIZED VIEW IF NOT EXISTS mv_crm_top_produtos_30d AS
+              SELECT
+                  'teste'::VARCHAR                                        AS tenant_id,
+                  ci.name                                                 AS nome_produto,
+                  ci.item_type                                            AS tipo,
+                  SUM(CAST(oi.quantity AS DECIMAL))::INT                  AS qtd_vendida,
+                  COALESCE(SUM(
+                      CAST(oi.quantity AS DECIMAL) * CAST(oi.applied_price AS DECIMAL)
+                  ), 0)                                                   AS valor_total
+              FROM src_itens_oportunidade_teste oi
+              JOIN src_oportunidades_teste       o  ON oi.opportunity_id  = o.id
+                                                    AND o.is_active = true
+                                                    AND o.outcome   = 'WON'
+                                                    AND o.stage     = 'CLOSED'
+                                                    AND COALESCE(o.closed_at, o.stage_changed_at, o.updated_at)
+                                                        >= NOW() - INTERVAL '30 days'
+              JOIN src_catalogo_itens_teste      ci ON oi.catalog_item_id = ci.id
+              GROUP BY ci.name, ci.item_type
+              ORDER BY qtd_vendida DESC
+              LIMIT 10;
+
+              -- 2.9 Análise de perdas — motivos (últimos 90 dias)
+              CREATE MATERIALIZED VIEW IF NOT EXISTS mv_crm_analise_perdas AS
+              SELECT
+                  'teste'::VARCHAR                                    AS tenant_id,
+                  COALESCE(loss_reason, 'Não informado')              AS motivo,
+                  COUNT(*)                                            AS ocorrencias
+              FROM src_oportunidades_teste
+              WHERE is_active = true
+                AND outcome = 'LOST'
+                AND stage   = 'CLOSED'
+                AND COALESCE(closed_at, stage_changed_at, updated_at) >= NOW() - INTERVAL '90 days'
+              GROUP BY loss_reason;
+
+              -- 2.10 Pipeline por faixa de probabilidade
+              CREATE MATERIALIZED VIEW IF NOT EXISTS mv_crm_pipeline_probabilidade AS
+              SELECT
+                  'teste'::VARCHAR AS tenant_id,
+                  CASE
+                      WHEN probability BETWEEN 0  AND 20  THEN 'Muito Baixa (0–20%)'
+                      WHEN probability BETWEEN 21 AND 40  THEN 'Baixa (21–40%)'
+                      WHEN probability BETWEEN 41 AND 60  THEN 'Média (41–60%)'
+                      WHEN probability BETWEEN 61 AND 80  THEN 'Alta (61–80%)'
+                      ELSE 'Muito Alta (81–100%)'
+                  END              AS faixa_probabilidade,
+                  CASE
+                      WHEN probability BETWEEN 0  AND 20  THEN 1
+                      WHEN probability BETWEEN 21 AND 40  THEN 2
+                      WHEN probability BETWEEN 41 AND 60  THEN 3
+                      WHEN probability BETWEEN 61 AND 80  THEN 4
+                      ELSE 5
+                  END              AS ordem,
+                  COUNT(*)         AS qtd_oportunidades,
+                  COALESCE(SUM(CAST(total_value AS DECIMAL)), 0) AS valor_pipeline
+              FROM src_oportunidades_teste
+              WHERE is_active = true
+                AND stage NOT IN ('CLOSED','CLOSED_WON','CLOSED_LOST','CANCELED')
+              GROUP BY faixa_probabilidade, ordem;
+
+              -- 2.11 Cohort de Safra (taxa de conversão em 90 dias)
+              CREATE MATERIALIZED VIEW IF NOT EXISTS mv_crm_cohort_safra AS
+              SELECT
+                  'teste'::VARCHAR                             AS tenant_id,
+                  date_trunc('month', created_at)              AS mes_safra,
+                  COUNT(*)                                     AS total_leads_safra,
+                  COUNT(CASE
+                      WHEN outcome = 'WON'
+                       AND EXTRACT(EPOCH FROM (
+                               COALESCE(closed_at, stage_changed_at, updated_at) - created_at
+                           )) / 86400.0 <= 90
+                      THEN 1
+                  END)                                         AS total_ganho_90_dias,
+                  ROUND(
+                      COUNT(CASE
+                          WHEN outcome = 'WON'
+                           AND EXTRACT(EPOCH FROM (
+                                   COALESCE(closed_at, stage_changed_at, updated_at) - created_at
+                               )) / 86400.0 <= 90
+                          THEN 1
+                      END)::DECIMAL / NULLIF(COUNT(*), 0) * 100, 2
+                  )                                            AS taxa_conversao_pct
+              FROM src_oportunidades_teste
+              WHERE is_active = true
+                AND created_at IS NOT NULL
+              GROUP BY date_trunc('month', created_at)
+              ORDER BY mes_safra DESC
+              LIMIT 6;
+
+              -- 2.12 Safra vs. Caixa — últimos 12 meses
+              CREATE MATERIALIZED VIEW IF NOT EXISTS mv_crm_safra_caixa AS
+              SELECT
+                  'teste'::VARCHAR             AS tenant_id,
+                  g.mes_criacao                AS mes,
+                  g.total_criadas,
+                  COALESCE(s.qtd_safra,   0)   AS qtd_safra,
+                  COALESCE(s.valor_safra, 0)   AS valor_safra,
+                  COALESCE(c.qtd_caixa,   0)   AS qtd_caixa,
+                  COALESCE(c.valor_caixa, 0)   AS valor_caixa,
+                  ROUND(
+                      COALESCE(s.qtd_safra, 0)::DECIMAL / NULLIF(g.total_criadas, 0) * 100, 1
+                  )                            AS taxa_conversao
+              FROM (
+                  SELECT
+                      date_trunc('month', created_at) AS mes_criacao,
+                      COUNT(*)                        AS total_criadas
+                  FROM src_oportunidades_teste
+                  WHERE is_active = true
+                    AND created_at >= NOW() - INTERVAL '365 days'
+                  GROUP BY date_trunc('month', created_at)
+              ) g
+              LEFT JOIN (
+                  SELECT
+                      date_trunc('month', created_at) AS mes,
+                      COUNT(*)                        AS qtd_safra,
+                      COALESCE(SUM(CAST(total_value AS DECIMAL)), 0) AS valor_safra
+                  FROM src_oportunidades_teste
+                  WHERE is_active = true
+                    AND outcome = 'WON' AND stage = 'CLOSED'
+                    AND created_at >= NOW() - INTERVAL '365 days'
+                  GROUP BY date_trunc('month', created_at)
+              ) s ON g.mes_criacao = s.mes
+              LEFT JOIN (
+                  SELECT
+                      date_trunc('month', COALESCE(closed_at, stage_changed_at, updated_at)) AS mes,
+                      COUNT(*)                        AS qtd_caixa,
+                      COALESCE(SUM(CAST(total_value AS DECIMAL)), 0) AS valor_caixa
+                  FROM src_oportunidades_teste
+                  WHERE is_active = true
+                    AND outcome = 'WON' AND stage = 'CLOSED'
+                    AND COALESCE(closed_at, stage_changed_at, updated_at) >= NOW() - INTERVAL '365 days'
+                  GROUP BY date_trunc('month', COALESCE(closed_at, stage_changed_at, updated_at))
+              ) c ON g.mes_criacao = c.mes;
+
+              SQL
+
+              echo ""
+              echo "=== TABLEs CDC criadas ==="
+              psql -c "SELECT name, connector FROM rw_catalog.rw_sources WHERE name LIKE '%teste%' ORDER BY name;"
+
+              echo ""
+              echo "=== Materialized Views CRM ==="
+              psql -c "SELECT name FROM rw_catalog.rw_materialized_views WHERE name LIKE 'mv_crm%' ORDER BY name;"
+
+              echo "Domínio CRM Força de Vendas configurado com sucesso."

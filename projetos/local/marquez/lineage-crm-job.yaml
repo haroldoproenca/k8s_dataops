@@ -1,0 +1,187 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: lineage-crm-registration
+  namespace: marquez
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: lineage-registrar
+          image: curlimages/curl:8.6.0
+          env:
+            - name: MARQUEZ_URL
+              value: "http://marquez.marquez.svc.cluster.local:80"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              MARQUEZ="${MARQUEZ_URL}/api/v1"
+
+              echo "Aguardando Marquez..."
+              until curl -sf "${MARQUEZ}/namespaces" > /dev/null; do
+                sleep 10
+              done
+              echo "Marquez pronto. Registrando linhagem CRM Força de Vendas..."
+
+              # ── Helper: criar namespace (idempotente) ────────────────────────
+              create_namespace() {
+                NS="$1"
+                curl -s -X PUT "${MARQUEZ}/namespaces/${NS}" \
+                  -H "Content-Type: application/json" \
+                  -d "{\"ownerName\":\"nexus-analytics\",\"description\":\"${NS}\"}" > /dev/null
+                echo "  ✓ namespace ${NS}"
+              }
+
+              # ── Helper: registrar dataset ─────────────────────────────────────
+              register_dataset() {
+                NS="$1" NAME="$2" SOURCE="$3" PHYSICAL="$4"
+                curl -s -X PUT "${MARQUEZ}/namespaces/${NS}/datasets/${NAME}" \
+                  -H "Content-Type: application/json" \
+                  -d "{
+                    \"type\": \"DB_TABLE\",
+                    \"physicalName\": \"${PHYSICAL}\",
+                    \"sourceName\": \"${SOURCE}\",
+                    \"description\": \"${NAME} — domínio CRM Força de Vendas (tenant: teste)\"
+                  }" > /dev/null
+                echo "  ✓ ${NS}/${NAME}"
+              }
+
+              # ── Helper: registrar job de linhagem (source → output) ───────────
+              register_lineage() {
+                JOB_NS="$1" JOB_NAME="$2"
+                shift 2
+                # inputs: pares "namespace:dataset" separados por espaço
+                INPUTS=""
+                OUTPUTS=""
+                PARSING_OUTPUTS=false
+                for arg in "$@"; do
+                  if [ "$arg" = "--outputs" ]; then
+                    PARSING_OUTPUTS=true
+                    continue
+                  fi
+                  NS_DS="${arg%%:*}"
+                  DS="${arg##*:}"
+                  if $PARSING_OUTPUTS; then
+                    OUTPUTS="${OUTPUTS},{\"namespace\":\"${NS_DS}\",\"name\":\"${DS}\"}"
+                  else
+                    INPUTS="${INPUTS},{\"namespace\":\"${NS_DS}\",\"name\":\"${DS}\"}"
+                  fi
+                done
+                INPUTS="[${INPUTS#,}]"
+                OUTPUTS="[${OUTPUTS#,}]"
+                curl -s -X POST "${MARQUEZ}/lineage" \
+                  -H "Content-Type: application/json" \
+                  -d "{
+                    \"eventType\": \"COMPLETE\",
+                    \"eventTime\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
+                    \"run\": {\"runId\": \"$(cat /proc/sys/kernel/random/uuid 2>/dev/null || echo 00000000-0000-0000-0000-000000000001)\"},
+                    \"job\": {\"namespace\": \"${JOB_NS}\", \"name\": \"${JOB_NAME}\"},
+                    \"inputs\": ${INPUTS},
+                    \"outputs\": ${OUTPUTS},
+                    \"producer\": \"k8s://marquez/lineage-crm-registration\"
+                  }" > /dev/null
+                echo "  ✓ job ${JOB_NS}/${JOB_NAME}"
+              }
+
+              # ── Criar namespaces (Marquez 0.50 exige criação explícita) ─────────
+              echo "Criando namespaces..."
+              create_namespace "mysql_teste_ndb"
+              create_namespace "redpanda_nexus"
+              create_namespace "risingwave_nexus"
+              create_namespace "cube_nexus"
+
+              # ── CAMADA 1: MySQL → Redpanda (via Debezium — já emite OL nativa) ─
+              echo ""
+              echo "[1/4] Registrando datasets MySQL fonte..."
+              register_dataset "mysql_teste_ndb" "opportunities"      "mysql_teste_ndb" "teste_ndb.opportunities"
+              register_dataset "mysql_teste_ndb" "customers"          "mysql_teste_ndb" "teste_ndb.customers"
+              register_dataset "mysql_teste_ndb" "opportunity_items"  "mysql_teste_ndb" "teste_ndb.opportunity_items"
+              register_dataset "mysql_teste_ndb" "catalog_items"      "mysql_teste_ndb" "teste_ndb.catalog_items"
+              register_dataset "mysql_teste_ndb" "monthly_goals"      "mysql_teste_ndb" "teste_ndb.monthly_goals"
+              register_dataset "mysql_teste_ndb" "users"              "mysql_teste_ndb" "teste_ndb.users"
+
+              # ── CAMADA 2: Redpanda tópicos ────────────────────────────────────
+              echo ""
+              echo "[2/4] Registrando tópicos Redpanda..."
+              register_dataset "redpanda_nexus" "nexus.teste_ndb.opportunities"     "redpanda_nexus" "nexus.teste_ndb.opportunities"
+              register_dataset "redpanda_nexus" "nexus.teste_ndb.customers"         "redpanda_nexus" "nexus.teste_ndb.customers"
+              register_dataset "redpanda_nexus" "nexus.teste_ndb.opportunity_items" "redpanda_nexus" "nexus.teste_ndb.opportunity_items"
+              register_dataset "redpanda_nexus" "nexus.teste_ndb.catalog_items"     "redpanda_nexus" "nexus.teste_ndb.catalog_items"
+              register_dataset "redpanda_nexus" "nexus.teste_ndb.monthly_goals"     "redpanda_nexus" "nexus.teste_ndb.monthly_goals"
+              register_dataset "redpanda_nexus" "nexus.teste_ndb.users"             "redpanda_nexus" "nexus.teste_ndb.users"
+
+              # ── CAMADA 3: RisingWave MVs ──────────────────────────────────────
+              echo ""
+              echo "[3/4] Registrando Materialized Views RisingWave..."
+              register_dataset "risingwave_nexus" "mv_crm_kpis_snapshot"        "risingwave_nexus" "mv_crm_kpis_snapshot"
+              register_dataset "risingwave_nexus" "mv_crm_geradas_por_mes"      "risingwave_nexus" "mv_crm_geradas_por_mes"
+              register_dataset "risingwave_nexus" "mv_crm_fechamentos_por_mes"  "risingwave_nexus" "mv_crm_fechamentos_por_mes"
+              register_dataset "risingwave_nexus" "mv_crm_metas_mensais"        "risingwave_nexus" "mv_crm_metas_mensais"
+              register_dataset "risingwave_nexus" "mv_crm_funil_estagios"       "risingwave_nexus" "mv_crm_funil_estagios"
+              register_dataset "risingwave_nexus" "mv_crm_oportunidades_ganhas" "risingwave_nexus" "mv_crm_oportunidades_ganhas"
+              register_dataset "risingwave_nexus" "mv_crm_top_deals_30d"        "risingwave_nexus" "mv_crm_top_deals_30d"
+              register_dataset "risingwave_nexus" "mv_crm_top_produtos_30d"     "risingwave_nexus" "mv_crm_top_produtos_30d"
+              register_dataset "risingwave_nexus" "mv_crm_analise_perdas"       "risingwave_nexus" "mv_crm_analise_perdas"
+              register_dataset "risingwave_nexus" "mv_crm_pipeline_probabilidade" "risingwave_nexus" "mv_crm_pipeline_probabilidade"
+              register_dataset "risingwave_nexus" "mv_crm_cohort_safra"         "risingwave_nexus" "mv_crm_cohort_safra"
+              register_dataset "risingwave_nexus" "mv_crm_safra_caixa"          "risingwave_nexus" "mv_crm_safra_caixa"
+
+              # ── CAMADA 4: Cube Core datasets ──────────────────────────────────
+              echo ""
+              echo "[4/4] Registrando cubos semânticos..."
+              register_dataset "cube_nexus" "CrmKpisSnapshot"         "risingwave_nexus" "mv_crm_kpis_snapshot"
+              register_dataset "cube_nexus" "CrmOportunidadesGanhas"  "risingwave_nexus" "mv_crm_oportunidades_ganhas"
+              register_dataset "cube_nexus" "CrmGeradasPorMes"        "risingwave_nexus" "mv_crm_geradas_por_mes"
+              register_dataset "cube_nexus" "CrmFechamentosPorMes"    "risingwave_nexus" "mv_crm_fechamentos_por_mes"
+              register_dataset "cube_nexus" "CrmFunilEstagios"        "risingwave_nexus" "mv_crm_funil_estagios"
+              register_dataset "cube_nexus" "CrmTopProdutos"          "risingwave_nexus" "mv_crm_top_produtos_30d"
+              register_dataset "cube_nexus" "CrmAnalisePerdas"        "risingwave_nexus" "mv_crm_analise_perdas"
+              register_dataset "cube_nexus" "CrmPipelineProbabilidade" "risingwave_nexus" "mv_crm_pipeline_probabilidade"
+              register_dataset "cube_nexus" "CrmCohortSafra"          "risingwave_nexus" "mv_crm_cohort_safra"
+              register_dataset "cube_nexus" "CrmSafraCaixa"           "risingwave_nexus" "mv_crm_safra_caixa"
+              register_dataset "cube_nexus" "CrmMetasMensais"         "risingwave_nexus" "mv_crm_metas_mensais"
+
+              # ── Registrar jobs de transformação (linhagem de fluxo) ───────────
+              echo ""
+              echo "Registrando jobs de transformação..."
+              register_lineage "risingwave_nexus" "crm_kpis_snapshot" \
+                "redpanda_nexus:nexus.teste_ndb.opportunities" \
+                --outputs \
+                "risingwave_nexus:mv_crm_kpis_snapshot"
+
+              register_lineage "risingwave_nexus" "crm_geradas_por_mes" \
+                "redpanda_nexus:nexus.teste_ndb.opportunities" \
+                --outputs \
+                "risingwave_nexus:mv_crm_geradas_por_mes"
+
+              register_lineage "risingwave_nexus" "crm_fechamentos_por_mes" \
+                "redpanda_nexus:nexus.teste_ndb.opportunities" \
+                --outputs \
+                "risingwave_nexus:mv_crm_fechamentos_por_mes"
+
+              register_lineage "risingwave_nexus" "crm_oportunidades_ganhas" \
+                "redpanda_nexus:nexus.teste_ndb.opportunities" \
+                "redpanda_nexus:nexus.teste_ndb.customers" \
+                "redpanda_nexus:nexus.teste_ndb.users" \
+                --outputs \
+                "risingwave_nexus:mv_crm_oportunidades_ganhas"
+
+              register_lineage "risingwave_nexus" "crm_top_produtos_30d" \
+                "redpanda_nexus:nexus.teste_ndb.opportunity_items" \
+                "redpanda_nexus:nexus.teste_ndb.opportunities" \
+                "redpanda_nexus:nexus.teste_ndb.catalog_items" \
+                --outputs \
+                "risingwave_nexus:mv_crm_top_produtos_30d"
+
+              register_lineage "risingwave_nexus" "crm_safra_caixa" \
+                "redpanda_nexus:nexus.teste_ndb.opportunities" \
+                --outputs \
+                "risingwave_nexus:mv_crm_safra_caixa"
+
+              echo ""
+              echo "Linhagem CRM registrada com sucesso no Marquez."
+              echo "Visualize em: https://marquez.tech.nexusplatform.com.br"
