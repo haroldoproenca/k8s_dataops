@@ -25,13 +25,7 @@ spec:
             - name: webapp-env-config
               mountPath: /usr/share/nginx/html/env.js
               subPath: env.js
-          resources:
-            requests:
-              cpu: "25m"
-              memory: "32Mi"
-            limits:
-              cpu: "100m"
-              memory: "128Mi"
+          # resources: OMITIDO INTENCIONALMENTE — K3D local não usa resources
           livenessProbe:
             httpGet:
               path: /index.html

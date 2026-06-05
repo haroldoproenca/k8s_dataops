@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-dashboard-webapp
+  labels:
+    app: nexus-dashboard-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nexus-dashboard-webapp
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: nexus-dashboard-webapp
+    spec:
+      containers:
+      - name: nexus-dashboard-webapp
+        image: ghcr.io/synapsehealthtech/nexus-dashboard-webapp:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP
+        # resources: definidos no overlay (OKE obrigatório, local omitido)
+        volumeMounts:
+        - name: config-js
+          mountPath: /usr/share/nginx/html/config.js
+          subPath: config.js
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 3
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: config-js
+        configMap:
+          name: nexus-dashboard-webapp-config

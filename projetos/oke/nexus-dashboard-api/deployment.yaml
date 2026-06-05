@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-dashboard-api
+spec:
+  replicas: 2
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      imagePullSecrets:
+      - name: ghcr-secret
+      containers:
+      - name: nexus-dashboard-api
+        image: ghcr.io/synapsehealthtech/nexus-dashboard-api:latest
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"

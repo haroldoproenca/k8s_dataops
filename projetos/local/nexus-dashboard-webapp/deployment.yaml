@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-dashboard-webapp
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: nexus-dashboard-webapp
+        image: nexus-dashboard-webapp:latest
+        imagePullPolicy: IfNotPresent
+        # resources: OMITIDO INTENCIONALMENTE — K3D local

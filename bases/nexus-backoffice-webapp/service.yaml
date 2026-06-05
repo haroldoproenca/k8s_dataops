@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nexus-backoffice-webapp-service
+spec:
+  type: ClusterIP
+  selector:
+    app: nexus-backoffice-webapp
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80

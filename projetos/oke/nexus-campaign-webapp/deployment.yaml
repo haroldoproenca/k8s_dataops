@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-campaign-webapp
+spec:
+  replicas: 2
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      imagePullSecrets:
+      - name: ghcr-secret
+      containers:
+      - name: nexus-campaign-webapp
+        image: ghcr.io/synapsehealthtech/nexus-campaign-webapp:latest
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "128Mi"

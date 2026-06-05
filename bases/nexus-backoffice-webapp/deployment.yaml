@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-backoffice-webapp-deployment
+  labels:
+    app: nexus-backoffice-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nexus-backoffice-webapp
+  template:
+    metadata:
+      labels:
+        app: nexus-backoffice-webapp
+    spec:
+      containers:
+      - name: nexus-backoffice-webapp-container
+        image: nexus-backoffice-webapp:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        volumeMounts:
+        - name: webapp-env-config
+          mountPath: /usr/share/nginx/html/env.js
+          subPath: env.js
+      volumes:
+      - name: webapp-env-config
+        configMap:
+          name: nexus-backoffice-webapp-env

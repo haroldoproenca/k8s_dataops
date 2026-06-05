@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-backoffice-api-deployment
+  labels:
+    app: nexus-backoffice-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nexus-backoffice-api
+  template:
+    metadata:
+      labels:
+        app: nexus-backoffice-api
+    spec:
+      containers:
+      - name: nexus-backoffice-api-container
+        image: nexus-backoffice-api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8001
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: nexus-backoffice-api-config
+        - secretRef:
+            name: nexus-backoffice-api-secrets

@@ -1,0 +1,10 @@
+# Strategic merge patch — escala o postgres container para 0 réplicas.
+# O PostgreSQL 18 roda no host Ubuntu (fora do k3d).
+# A postgres-service é ExternalName → host.k3d.internal, então
+# não há conflito de porta: o container não sobe e o service roteia para o host.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+spec:
+  replicas: 0

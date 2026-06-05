@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nexus-dashboard-webapp-service
+  labels:
+    app: nexus-dashboard-webapp
+spec:
+  type: ClusterIP
+  selector:
+    app: nexus-dashboard-webapp
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+    protocol: TCP

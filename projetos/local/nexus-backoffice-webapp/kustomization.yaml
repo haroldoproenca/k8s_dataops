@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nexus-backoffice-webapp
+
+resources:
+- ../../../bases/nexus-backoffice-webapp
+- httproute.yaml
+- certificate.yaml
+
+patches:
+- path: deployment.yaml
+- path: configmap.yaml
