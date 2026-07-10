@@ -23,7 +23,11 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 4000
-          command: ["--config", "/app/config.yaml", "--port", "4000"]
+          # K8s `command` sobrescreve o ENTRYPOINT (litellm) → execaria "--config" como binário
+          # e crasha (CrashLoopBackOff: exec "--config" not found). Use `args` (anexa ao
+          # entrypoint litellm da imagem). Em docker-compose `command` sobrescreve só o CMD,
+          # por isso lá funciona — semântica diferente; não copiar para o K8s.
+          args: ["--config", "/app/config.yaml", "--port", "4000"]
           volumeMounts:
             - name: litellm-config-vol
               mountPath: /app/config.yaml
@@ -37,18 +41,22 @@ spec:
                 configMapKeyRef:
                   name: nexus-agenticops-config
                   key: LANGFUSE_HOST
+          # /health (sem sufixo) exige auth e CHECA todos os modelos → 401/erro com modelos
+          # cloud+placeholder, matando o pod em loop. Usar os endpoints leves do LiteLLM:
+          # /health/liveliness (200 "I'm alive") e /health/readiness (200 + db). initialDelay
+          # maior tolera o prisma migrate do startup (~20-40s).
           livenessProbe:
             httpGet:
-              path: /health
+              path: /health/liveliness
               port: 4000
-            initialDelaySeconds: 20
+            initialDelaySeconds: 45
             periodSeconds: 30
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /health
+              path: /health/readiness
               port: 4000
-            initialDelaySeconds: 10
+            initialDelaySeconds: 20
             periodSeconds: 15
           resources:
             requests:

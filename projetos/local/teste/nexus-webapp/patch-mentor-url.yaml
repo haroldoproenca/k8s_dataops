@@ -1,0 +1,27 @@
+# Strategic merge patch — injeta a URL do motor Mentor (agenticops) em runtime.
+#
+# O Mentor é GLOBAL: um único deployment (hark-api.tech.nexusplatform.com.br) atende
+# todos os tenants. O isolamento é feito pelo backend a partir do tenant_id da request
+# (amarra host/banco do tenant + valida o JWT — nunca lê de outro cliente). Por isso o
+# webapp do teste aponta para esse host global, e não para um host por subdomínio.
+#
+# Mecanismo: o container gera /usr/share/nginx/html/config.js (window.env) a partir das
+# variáveis de ambiente no startup. Adicionamos a chave REACT_APP_AGENTICOPS_API_URL
+# (lida por getEnv no webapp) sem tocar na base compartilhada.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-webapp-deployment
+spec:
+  template:
+    spec:
+      containers:
+        - name: nexus-webapp-container
+          env:
+            - name: REACT_APP_AGENTICOPS_API_URL
+              value: "https://hark-api.tech.nexusplatform.com.br"
+          args:
+            - >-
+              echo "window.env = { VITE_CLOUDFLARE_SITE_KEY: '$VITE_CLOUDFLARE_SITE_KEY', REACT_APP_AGENTICOPS_API_URL: '$REACT_APP_AGENTICOPS_API_URL' };" > /usr/share/nginx/html/config.js &&
+              nginx -g 'daemon off;'

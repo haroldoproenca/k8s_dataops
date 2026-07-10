@@ -1,0 +1,50 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: athena-api-route
+  namespace: athena-api
+spec:
+  parentRefs:
+  - name: nexus-gateway
+    namespace: nginx-gateway
+    sectionName: https
+  hostnames:
+  - athena-api.tech.nexusplatform.com.br
+  rules:
+  - matches:
+    - method: OPTIONS
+      path:
+        type: PathPrefix
+        value: /
+    filters:
+    - type: ResponseHeaderModifier
+      responseHeaderModifier:
+        set:
+        - name: Access-Control-Allow-Origin
+          value: "https://athena.tech.nexusplatform.com.br"
+        - name: Access-Control-Allow-Methods
+          value: "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        - name: Access-Control-Allow-Headers
+          value: "Content-Type, Authorization, X-Requested-With"
+        - name: Access-Control-Allow-Credentials
+          value: "true"
+        - name: Access-Control-Max-Age
+          value: "86400"
+    backendRefs:
+    - name: athena-api-service
+      port: 80
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    filters:
+    - type: ResponseHeaderModifier
+      responseHeaderModifier:
+        set:
+        - name: Access-Control-Allow-Origin
+          value: "https://athena.tech.nexusplatform.com.br"
+        - name: Access-Control-Allow-Credentials
+          value: "true"
+    backendRefs:
+    - name: athena-api-service
+      port: 80

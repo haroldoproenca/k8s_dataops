@@ -10,6 +10,13 @@ data:
   EMAILS_FROM_EMAIL: "noreply@nexusplatform.com.br"
   EMAILS_FROM_NAME: "Nexus Platform"
   NEXUS_CI_TOKEN: "teste-playwright"
+  # Meta / WhatsApp Cloud API — preencher com o App ID e o Configuration ID
+  # do Embedded Signup criados em developers.facebook.com (app tipo Business).
+  # Enquanto META_APP_ID estiver vazio, o wizard mostra "Integração Meta não
+  # configurada" (503 proposital) e só o modo manual (System User Token) funciona.
+  META_APP_ID: ""
+  META_EMBEDDED_SIGNUP_CONFIG_ID: ""
+  META_GRAPH_API_VERSION: "v23.0"
 
 
 

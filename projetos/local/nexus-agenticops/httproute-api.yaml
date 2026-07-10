@@ -7,14 +7,16 @@ spec:
   parentRefs:
     - name: nexus-gateway
       namespace: nginx-gateway
-      sectionName: https
+      # hosts .tech.nexusplatform.com.br atam no listener tech-https (cert wildcard-tech-tls-secret).
+      # "https" serve *.nexusplatform.com.br → cert com CN inválido p/ *.tech (ERR_CERT_COMMON_NAME_INVALID).
+      sectionName: tech-https
   hostnames:
-    - "agenticops-api.nexusplatform.com.br"
+    - "hark-api.tech.nexusplatform.com.br"
   rules:
     - matches:
         - path:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: agents-api-service
+        - name: nexus-agenticops-api-service
           port: 80

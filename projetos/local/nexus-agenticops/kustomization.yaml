@@ -15,3 +15,19 @@ patches:
   - path: secret.yaml
   - path: agents-api-deployment.yaml
   - path: arq-worker-deployment.yaml
+  # Local = sem resources: o limite 512Mi do base derruba o litellm:main-latest por OOM
+  # (prisma migrate + carga de providers passa de 512Mi). K3d local tem RAM sobrando.
+  # + DATABASE_URL explícito: o envFrom do secret traz a URL dos AGENTES
+  # (postgresql+asyncpg://...nexus_agents) que o prisma do LiteLLM rejeita (P1012). O LiteLLM
+  # precisa do SEU banco (litellm_db, driver puro). env explícito vence o envFrom.
+  - target:
+      kind: Deployment
+      name: litellm-deployment
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/containers/0/resources
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: DATABASE_URL
+          value: postgresql://postgres:changeme@host.k3d.internal:5432/litellm_db

@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: athena-db-init
+  labels:
+    app: athena-api
+    job: db-init
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app: athena-api
+        job: db-init
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: db-init
+        image: ghcr.io/haroldoproenca/athena-api:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "-m", "scripts.init_db"]
+        envFrom:
+        - configMapRef:
+            name: athena-api-config
+        - secretRef:
+            name: athena-api-secrets

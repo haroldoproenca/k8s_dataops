@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-msg-webapp-env
+data:
+  env.js: |
+    window.__ENV = {
+      API_BASE_URL: 'https://msg-api.tech.nexusplatform.com.br',
+      ADMIN_API_KEY: 'change-me'
+    };
+

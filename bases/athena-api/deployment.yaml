@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: athena-api-deployment
+  labels:
+    app: athena-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: athena-api
+  template:
+    metadata:
+      labels:
+        app: athena-api
+    spec:
+      containers:
+      - name: athena-api-container
+        image: ghcr.io/haroldoproenca/athena-api:latest
+        imagePullPolicy: IfNotPresent
+        command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+        ports:
+        - containerPort: 8000
+          name: http
+        envFrom:
+        - configMapRef:
+            name: athena-api-config
+        - secretRef:
+            name: athena-api-secrets
+        volumeMounts:
+        - name: athena-local-storage
+          mountPath: /tmp/athena-storage
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: athena-local-storage
+        emptyDir: {}

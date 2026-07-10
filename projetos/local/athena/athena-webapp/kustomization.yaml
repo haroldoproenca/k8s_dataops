@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: athena-webapp
+
+resources:
+- ../../../../bases/athena-webapp
+- namespace.yaml
+- httproute.yaml
+- certificate.yaml
+
+patches:
+- path: patch-api-url.yaml

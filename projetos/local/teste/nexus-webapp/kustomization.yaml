@@ -9,3 +9,6 @@ resources:
 - httproute.yaml
 - certificate.yaml
 - certificate-dns2.yaml
+
+patches:
+- path: patch-mentor-url.yaml
