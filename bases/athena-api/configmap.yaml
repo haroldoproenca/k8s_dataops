@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: athena-api-config
+data:
+  ATHENA_DB_ECHO: "false"
+  ATHENA_DB_USE_NULLPOOL: "false"
+  ATHENA_CORS_ORIGINS: "http://localhost:5173,http://localhost:3000,https://athena.tech.nexusplatform.com.br"
+  ATHENA_STORAGE_BACKEND: "minio"
+  ATHENA_STORAGE_ENDPOINT: "http://athena-minio-service:9000"
+  ATHENA_STORAGE_BUCKET: "athena"
+  ATHENA_STORAGE_LOCAL_DIR: "/tmp/athena-storage"
+  ATHENA_EMBEDDINGS_PROVIDER: "external"
+  ATHENA_IMAGE_EMBEDDINGS_PROVIDER: "external"
+  ATHENA_LLM_PROVIDER: "local"
+  ATHENA_IMAGE_LEAVES_ENVIRONMENT: "false"
+  ATHENA_JWT_ALG: "HS256"
+  ATHENA_TOKEN_EXPIRE_MINUTES: "720"

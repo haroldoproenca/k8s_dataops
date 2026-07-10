@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-msg-webapp-deployment
+  labels:
+    app: nexus-msg-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nexus-msg-webapp
+  template:
+    metadata:
+      labels:
+        app: nexus-msg-webapp
+    spec:
+      containers:
+      - name: nexus-msg-webapp-container
+        image: ghcr.io/synapsehealthtech/nexus-msg-webapp:v0.1.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        volumeMounts:
+        - name: env-config
+          mountPath: /usr/share/nginx/html/env.js
+          subPath: env.js
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: env-config
+        configMap:
+          name: nexus-msg-webapp-env
+

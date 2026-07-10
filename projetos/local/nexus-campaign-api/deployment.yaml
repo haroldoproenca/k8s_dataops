@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-campaign-api
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: nexus-campaign-api
+        image: ghcr.io/synapsehealthtech/nexus-campaign-api:latest
+        # resources: OMITIDO INTENCIONALMENTE — K3D local
+      - name: nexus-campaign-worker
+        image: ghcr.io/synapsehealthtech/nexus-campaign-api:latest
+        # resources: OMITIDO INTENCIONALMENTE — K3D local

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-msg-api-config
+data:
+  PROJECT_NAME: "Nexus Messaging Gateway Local"
+  META_GRAPH_API_VERSION: "v23.0"
+  CORS_ORIGINS: "https://msg.tech.nexusplatform.com.br,http://localhost:5174"
+  TENANT_FORWARD_TIMEOUT_SECONDS: "10"
+  WHATSAPP_TEST_PHONE_NUMBER: "+1 (555) 624-5946"
+  WHATSAPP_TEST_PHONE_NUMBER_ID: "1275272615662572"
+  WHATSAPP_TEST_WABA_ID: "1704203297149865"

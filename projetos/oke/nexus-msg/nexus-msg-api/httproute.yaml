@@ -1,0 +1,62 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nexus-msg-api-route
+  namespace: nexus-msg-api
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "msg-api.tech.nexusplatform.com.br"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    external-dns.alpha.kubernetes.io/target: "132.226.245.136"
+spec:
+  parentRefs:
+  - name: nexus-gateway
+    namespace: nginx-gateway
+    sectionName: https
+  hostnames:
+  - "msg-api.tech.nexusplatform.com.br"
+  rules:
+  - matches:
+    - method: OPTIONS
+      path:
+        type: PathPrefix
+        value: /
+    filters:
+    - type: ResponseHeaderModifier
+      responseHeaderModifier:
+        set:
+        - name: Access-Control-Allow-Origin
+          value: "https://msg.tech.nexusplatform.com.br"
+        - name: Access-Control-Allow-Methods
+          value: "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        - name: Access-Control-Allow-Headers
+          value: "Content-Type, Authorization, X-Requested-With, X-API-Key, X-Hub-Signature-256"
+        - name: Access-Control-Allow-Credentials
+          value: "true"
+        - name: Access-Control-Max-Age
+          value: "86400"
+    backendRefs:
+    - name: nexus-msg-api-service
+      port: 80
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    filters:
+    - type: ResponseHeaderModifier
+      responseHeaderModifier:
+        add:
+        - name: X-Frame-Options
+          value: DENY
+        - name: X-Content-Type-Options
+          value: nosniff
+        - name: Strict-Transport-Security
+          value: "max-age=31536000; includeSubDomains"
+        set:
+        - name: Access-Control-Allow-Origin
+          value: "https://msg.tech.nexusplatform.com.br"
+        - name: Access-Control-Allow-Credentials
+          value: "true"
+    backendRefs:
+    - name: nexus-msg-api-service
+      port: 80
+

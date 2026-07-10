@@ -1,0 +1,16 @@
+# Patch JSON 6902 — converte postgres-service de ClusterIP para ExternalName.
+# Os pods do cluster resolvem "postgres-service" como CNAME → host.k3d.internal
+# (alias automático do k3d para o IP do host Ubuntu).
+# Resultado: DATABASE_URL continua usando "host.k3d.internal:5432" e roteia
+# para o PostgreSQL 18 instalado diretamente no Ubuntu, sem container no cluster.
+- op: replace
+  path: /spec/type
+  value: ExternalName
+- op: add
+  path: /spec/externalName
+  value: host.k3d.internal
+- op: remove
+  path: /spec/selector
+- op: replace
+  path: /spec/ports/0/port
+  value: 5432

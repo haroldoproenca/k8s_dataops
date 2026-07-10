@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-campaign-api
+  labels:
+    app: nexus-campaign-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nexus-campaign-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: nexus-campaign-api
+    spec:
+      containers:
+      - name: nexus-campaign-api
+        image: ghcr.io/synapsehealthtech/nexus-campaign-api:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8001
+          protocol: TCP
+        envFrom:
+        - secretRef:
+            name: nexus-campaign-api-secret
+        - configMapRef:
+            name: nexus-campaign-api-config
+        # resources: definidos no overlay (OKE obrigatório, local omitido)
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8001
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      - name: nexus-campaign-worker
+        image: ghcr.io/synapsehealthtech/nexus-campaign-api:latest
+        imagePullPolicy: Always
+        command: ["python", "worker.py"]
+        envFrom:
+        - secretRef:
+            name: nexus-campaign-api-secret
+        - configMapRef:
+            name: nexus-campaign-api-config
+        # resources: definidos no overlay (OKE obrigatório, local omitido)

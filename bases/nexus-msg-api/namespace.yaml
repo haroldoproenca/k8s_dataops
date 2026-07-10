@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nexus-msg-api
+  labels:
+    app: nexus-msg-api
+    component: messaging-gateway
+

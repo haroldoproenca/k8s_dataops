@@ -1,0 +1,12 @@
+# Patch: nexus-backoffice-webapp env.js — K3D local
+# Injeta a URL da API em runtime sem necessidade de rebuild da imagem.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-backoffice-webapp-env
+  namespace: nexus-backoffice-webapp
+data:
+  env.js: |
+    window.__ENV = {
+      API_BASE_URL: 'https://backoffice-api.tech.nexusplatform.com.br',
+    };

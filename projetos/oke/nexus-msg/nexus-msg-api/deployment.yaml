@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-msg-api-deployment
+  labels:
+    app: nexus-msg-api
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      imagePullSecrets:
+      - name: ghcr-secret
+      containers:
+      - name: nexus-msg-api-container
+        image: ghcr.io/synapsehealthtech/nexus-msg-api:v0.1.0
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "75m"
+            memory: "128Mi"
+          limits:
+            cpu: "300m"
+            memory: "384Mi"
+

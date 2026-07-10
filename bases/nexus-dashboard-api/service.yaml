@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nexus-dashboard-api-service
+  labels:
+    app: nexus-dashboard-api
+spec:
+  type: ClusterIP
+  selector:
+    app: nexus-dashboard-api
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8001
+    protocol: TCP

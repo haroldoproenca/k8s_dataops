@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-dashboard-api
+  labels:
+    app: nexus-dashboard-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nexus-dashboard-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: nexus-dashboard-api
+    spec:
+      containers:
+      - name: nexus-dashboard-api
+        image: ghcr.io/synapsehealthtech/nexus-dashboard-api:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8001
+          protocol: TCP
+        envFrom:
+        - secretRef:
+            name: nexus-dashboard-api-secret
+        - configMapRef:
+            name: nexus-dashboard-api-config
+        # resources: definidos no overlay (OKE obrigatório, local omitido)
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3

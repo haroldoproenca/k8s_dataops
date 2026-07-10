@@ -15,12 +15,15 @@ metadata:
 data:
   config.yaml: |
     model_list:
+      # Especialistas (Tier 2) precisam de tool-calling + saída estruturada rígida —
+      # llama3.2 (3B) alucina/erra o schema. qwen2.5:7b é forte em tools/JSON.
+      # ⚠️ Requer no host: `ollama pull qwen2.5:7b`.
       - model_name: agente-padrao
         litellm_params:
-          model: ollama/llama3.2
+          model: ollama/qwen2.5:7b
           api_base: "http://host.k3d.internal:11434"
           rpm: 1000
-          timeout: 120
+          timeout: 180
 
       - model_name: agente-rapido
         litellm_params:
@@ -35,6 +38,24 @@ data:
           api_base: "http://host.k3d.internal:11434"
           rpm: 500
           timeout: 180
+
+      # Orquestrador Mentor (Tier 1) — roteamento + síntese. qwen2.5:7b segue o
+      # protocolo de tools/saída estruturada melhor que os llama3.2 (3B).
+      # ⚠️ Requer no host: `ollama pull qwen2.5:7b`.
+      - model_name: agente-mentor
+        litellm_params:
+          model: ollama/qwen2.5:7b
+          api_base: "http://host.k3d.internal:11434"
+          rpm: 500
+          timeout: 180
+
+      # Bouncer anti-small-talk (Tier 0.5) — modelo barato/rápido.
+      - model_name: agente-gateway
+        litellm_params:
+          model: ollama/llama3.2:3b
+          api_base: "http://host.k3d.internal:11434"
+          rpm: 2000
+          timeout: 60
 
     router_settings:
       routing_strategy: "cost-based-routing"

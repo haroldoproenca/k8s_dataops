@@ -11,30 +11,31 @@ spec:
   hostnames:
     - "hark-api.tech.nexusplatform.com.br"
   rules:
-    # SSE — /flows/parse/stream exige timeout infinito (conexão longa de streaming)
-    # Esta regra deve vir ANTES da regra geral para ter precedência no match
+    # CORS preflight — OPTIONS /flows/parse/stream deve chegar ao FastAPI antes da regra SSE.
+    # NGINX Gateway Fabric não faz fall-through: o header match da regra SSE causa 404 para OPTIONS.
     - matches:
         - path:
             type: PathPrefix
             value: /flows/parse/stream
-          headers:
-            - type: Exact
-              name: Accept
-              value: text/event-stream
-      timeouts:
-        request: 0s          # sem timeout para SSE
-        backendRequest: 0s
+          method: OPTIONS
       backendRefs:
         - name: nexus-agenticops-api-service
           port: 80
-    # Regra geral — endpoints HTTP normais
+    # SSE via POST — webapp usa fetch()+ReadableStream com accept:*/*, não EventSource.
+    # Match por method:POST garante timeout infinito sem depender do Accept header.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /flows/parse/stream
+          method: POST
+      backendRefs:
+        - name: nexus-agenticops-api-service
+          port: 80
+    # Regra geral — endpoints HTTP normais (inclui SSE: NGINX GF não suporta timeouts)
     - matches:
         - path:
             type: PathPrefix
             value: /
-      timeouts:
-        request: 180s
-        backendRequest: 180s
       backendRefs:
         - name: nexus-agenticops-api-service
           port: 80

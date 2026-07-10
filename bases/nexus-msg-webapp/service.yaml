@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nexus-msg-webapp-service
+  labels:
+    app: nexus-msg-webapp
+spec:
+  type: ClusterIP
+  selector:
+    app: nexus-msg-webapp
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 80
+

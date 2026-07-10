@@ -36,8 +36,59 @@ data:
           rpm: 500
           timeout: 180
 
+      # Orquestrador Mentor (Tier 1) e bouncer (Tier 0.5) — necessários pelo agente Mentor.
+      - model_name: agente-mentor
+        litellm_params:
+          model: ollama/llama3.2
+          api_base: "http://host.k3d.internal:11434"
+          rpm: 1000
+          timeout: 120
+
+      - model_name: agente-gateway
+        litellm_params:
+          model: ollama/llama3.2:3b
+          api_base: "http://host.k3d.internal:11434"
+          rpm: 2000
+          timeout: 60
+
+      # Embedding do cache semântico de turno e do VectorStore (model="text-embedding-3-small").
+      # OpenAI = 1536 dims, casa com a coluna pgvector vector(1536). O `api_key` aqui é um
+      # PLACEHDER literal (NÃO é segredo): existe só p/ o deployment subir healthy. A
+      # credencial OpenAI REAL vem do BANCO (providers) por requisição (extra_body em
+      # semantic_cache._embed) e sobrescreve este placeholder — política: chave de provider
+      # de agente nunca fica no secret.
+      - model_name: text-embedding-3-small
+        litellm_params:
+          model: openai/text-embedding-3-small
+          api_key: "db-injected-per-request"
+          rpm: 3000
+          timeout: 30
+
+      # Passthrough por provider p/ modelos escolhidos por nó na UI (/admin/models).
+      # api_key = PLACEHOLDER literal (deployment healthy); a credencial REAL vem do BANCO
+      # em runtime (model_resolver → extra_body) e sobrescreve. Nunca do secret. Adicionar
+      # provider novo = um wildcard aqui. (gemini/gemini-3.5-flash cai em gemini/* )
+      - model_name: "gemini/*"
+        litellm_params:
+          model: "gemini/*"
+          api_key: "db-injected-per-request"
+      - model_name: "openai/*"
+        litellm_params:
+          model: "openai/*"
+          api_key: "db-injected-per-request"
+      - model_name: "anthropic/*"
+        litellm_params:
+          model: "anthropic/*"
+          api_key: "db-injected-per-request"
+      - model_name: "deepseek/*"
+        litellm_params:
+          model: "deepseek/*"
+          api_key: "db-injected-per-request"
+
     router_settings:
-      routing_strategy: "lowest_cost"
+      # "lowest_cost" foi removido do LiteLLM (erro: Invalid routing_strategy) — usar
+      # "simple-shuffle". Como cada model group tem 1 só deployment, a estratégia é inócua.
+      routing_strategy: "simple-shuffle"
       num_retries: 1
       fallbacks: []
 

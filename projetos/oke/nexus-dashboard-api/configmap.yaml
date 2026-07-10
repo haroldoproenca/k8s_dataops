@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-dashboard-api-config
+data:
+  CORS_ORIGINS: "https://dashboard.tech.nexusplatform.com.br"
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  DB_NAME: "nexus_dashboard"

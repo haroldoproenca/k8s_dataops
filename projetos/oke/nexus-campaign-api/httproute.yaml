@@ -1,0 +1,25 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nexus-campaign-api-route
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: campaign-api.nexusplatform.com.br
+    nginx.org/cors-allow-origin: "https://campaign.nexusplatform.com.br"
+    nginx.org/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.org/cors-allow-headers: "Content-Type, Authorization, X-Requested-With"
+    nginx.org/cors-allow-credentials: "true"
+spec:
+  parentRefs:
+  - name: nexus-gateway
+    namespace: nginx-gateway
+    sectionName: https
+  hostnames:
+  - "campaign-api.nexusplatform.com.br"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: nexus-campaign-api-service
+      port: 80

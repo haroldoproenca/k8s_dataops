@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-api-config
+data:
+  FRONTEND_URL: "https://drr.nexusplatform.com.br"
+  CORS_ORIGINS: "https://drr.nexusplatform.com.br,https://drr-api.nexusplatform.com.br,http://localhost:5173"

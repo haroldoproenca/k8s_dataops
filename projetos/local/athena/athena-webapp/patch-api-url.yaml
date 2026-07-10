@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: athena-webapp-deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: athena-webapp-container
+        env:
+        - name: API_BASE_URL
+          value: "https://athena-api.tech.nexusplatform.com.br"

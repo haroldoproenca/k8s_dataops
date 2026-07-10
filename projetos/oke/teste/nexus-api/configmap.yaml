@@ -5,3 +5,8 @@ metadata:
 data:
   FRONTEND_URL: "https://teste.nexusplatform.com.br"
   CORS_ORIGINS: "https://teste.nexusplatform.com.br,https://teste-api.nexusplatform.com.br,http://localhost:5173"
+  # Meta / WhatsApp Cloud API — preencher com o App ID e o Configuration ID
+  # do Embedded Signup criados em developers.facebook.com (app tipo Business).
+  META_APP_ID: ""
+  META_EMBEDDED_SIGNUP_CONFIG_ID: ""
+  META_GRAPH_API_VERSION: "v23.0"

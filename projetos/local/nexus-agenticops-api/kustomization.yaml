@@ -23,3 +23,9 @@ patches:
   - path: secret.yaml
   - path: agents-api-deployment.yaml
   - path: arq-worker-deployment.yaml
+  # PostgreSQL 18 no host Ubuntu — desabilita o container e converte o service para ExternalName
+  - path: postgres-deployment-patch.yaml
+  - target:
+      kind: Service
+      name: postgres-service
+    path: postgres-service-patch.yaml

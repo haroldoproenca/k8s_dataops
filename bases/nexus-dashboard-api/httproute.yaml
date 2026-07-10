@@ -1,0 +1,36 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nexus-dashboard-api-route
+  annotations:
+    # external-dns.alpha.kubernetes.io/hostname: substituir no overlay OKE
+    nginx.org/cors-allow-origin: "https://dashboard.tech.nexusplatform.com.br,http://localhost:5175"
+    nginx.org/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.org/cors-allow-headers: "Content-Type, Authorization, X-Requested-With, X-Tenant-ID"
+    nginx.org/cors-allow-credentials: "true"
+spec:
+  parentRefs:
+  - name: nexus-gateway
+    namespace: nginx-gateway
+    sectionName: tech-https
+  hostnames:
+  - "dashboard-api.tech.nexusplatform.com.br"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    filters:
+    - type: ResponseHeaderModifier
+      responseHeaderModifier:
+        add:
+        - name: X-Frame-Options
+          value: DENY
+        - name: X-Content-Type-Options
+          value: nosniff
+        - name: Strict-Transport-Security
+          value: "max-age=31536000; includeSubDomains"
+    backendRefs:
+    - name: nexus-dashboard-api-service
+      port: 80
+      weight: 100

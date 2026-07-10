@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-campaign-api-config
+data:
+  ALGORITHM: "HS256"
+  CORS_ORIGINS: "http://localhost:5173"
+  WORKER_BATCH_SIZE: "10"
+  WORKER_SLEEP_SECONDS: "5"
+  RATE_LIMIT_PER_MINUTE: "60"
+  LOG_LEVEL: "INFO"
+  ENVIRONMENT: "local"

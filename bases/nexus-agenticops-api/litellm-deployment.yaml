@@ -38,12 +38,12 @@ spec:
                   name: nexus-agenticops-config
                   key: LANGFUSE_HOST
             # Prisma (interno do LiteLLM) não aceita postgresql+asyncpg://.
-            # env explícito sobrescreve o DATABASE_URL vindo do envFrom/secretRef.
+            # Banco dedicado litellm_db — nunca compartilhar com nexus_agents (schema Prisma diverge).
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
                   name: nexus-agenticops-secrets
-                  key: DATABASE_URL_SYNC
+                  key: LITELLM_DATABASE_URL
           livenessProbe:
             httpGet:
               path: /health/liveliness
