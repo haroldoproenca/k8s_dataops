@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: nexus-campaign-webapp
-        image: ghcr.io/synapsehealthtech/nexus-campaign-webapp:latest
+        image: ghcr.io/synapsehealthtech/nexus-campaign-webapp:v1.0.0
         imagePullPolicy: Always
         ports:
         - name: http

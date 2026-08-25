@@ -5,7 +5,7 @@ metadata:
   namespace: nginx-gateway  # Namespace central para o controller e o gateway
   annotations:
     oci-network-load-balancer.oraclecloud.com/external-ip-only: "true"
-    external-dns.alpha.kubernetes.io/hostname: "*.nexusplatform.com.br,nexusplatform.com.br"
+    external-dns.alpha.kubernetes.io/hostname: "*.nexusplatform.com.br,nexusplatform.com.br,*.tech.nexusplatform.com.br"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
     external-dns.alpha.kubernetes.io/target: "132.226.245.136"
 spec:
@@ -26,6 +26,25 @@ spec:
       mode: Terminate
       certificateRefs:
       - name: wildcard-tls-secret
+        namespace: nginx-gateway
+    allowedRoutes:
+      namespaces:
+        from: All
+  - name: tech-http
+    port: 80
+    protocol: HTTP
+    hostname: "*.tech.nexusplatform.com.br"
+    allowedRoutes:
+      namespaces:
+        from: All
+  - name: tech-https
+    port: 443
+    protocol: HTTPS
+    hostname: "*.tech.nexusplatform.com.br"
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: wildcard-tech-tls-secret
         namespace: nginx-gateway
     allowedRoutes:
       namespaces:

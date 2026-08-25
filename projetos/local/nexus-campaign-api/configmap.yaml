@@ -5,4 +5,5 @@ metadata:
 data:
   CORS_ORIGINS: "http://campaign.nexusplatform.com.br,http://localhost:5173"
   ENVIRONMENT: "local"
+  AUTO_CREATE_SCHEMA: "true"
   LOG_LEVEL: "DEBUG"

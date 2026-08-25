@@ -4,6 +4,6 @@ metadata:
   name: nexus-campaign-webapp-env
 data:
   env.js: |
-    window.ENV = {
-      VITE_CAMPAIGN_API_URL: "http://localhost:8001",
+    window.__ENV = {
+      CAMPAIGN_API_URL: "http://localhost:8001",
     };

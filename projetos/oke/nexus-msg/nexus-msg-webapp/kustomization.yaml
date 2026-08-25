@@ -7,7 +7,6 @@ resources:
 - ../../../../bases/nexus-msg-webapp
 - httproute.yaml
 - hpa.yaml
-- ghcr-secret.yaml
 
 patches:
 - path: configmap.yaml

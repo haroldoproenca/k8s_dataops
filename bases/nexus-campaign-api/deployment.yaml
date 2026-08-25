@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: nexus-campaign-api
-        image: ghcr.io/synapsehealthtech/nexus-campaign-api:latest
+        image: ghcr.io/synapsehealthtech/nexus-campaign-api:v1.0.0
         imagePullPolicy: Always
         ports:
         - name: http
@@ -50,7 +50,7 @@ spec:
           timeoutSeconds: 3
           failureThreshold: 3
       - name: nexus-campaign-worker
-        image: ghcr.io/synapsehealthtech/nexus-campaign-api:latest
+        image: ghcr.io/synapsehealthtech/nexus-campaign-api:v1.0.0
         imagePullPolicy: Always
         command: ["python", "worker.py"]
         envFrom:

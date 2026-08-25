@@ -8,8 +8,8 @@ spec:
     spec:
       containers:
       - name: nexus-campaign-api
-        image: ghcr.io/synapsehealthtech/nexus-campaign-api:latest
+        image: ghcr.io/synapsehealthtech/nexus-campaign-api:v1.0.0
         # resources: OMITIDO INTENCIONALMENTE — K3D local
       - name: nexus-campaign-worker
-        image: ghcr.io/synapsehealthtech/nexus-campaign-api:latest
+        image: ghcr.io/synapsehealthtech/nexus-campaign-api:v1.0.0
         # resources: OMITIDO INTENCIONALMENTE — K3D local

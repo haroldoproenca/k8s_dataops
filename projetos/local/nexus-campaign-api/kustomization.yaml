@@ -6,6 +6,8 @@ namespace: nexus-local
 resources:
 - ../../../bases/nexus-campaign-api
 - namespace.yaml
+- mysql.yaml
+- redis.yaml
 
 patches:
 - path: deployment.yaml

@@ -7,6 +7,5 @@ spec:
     spec:
       containers:
       - name: nexus-msg-webapp-container
-        image: nexus-msg-webapp:latest
+        image: nexus-msg-webapp:v0.1.0
         imagePullPolicy: IfNotPresent
-
