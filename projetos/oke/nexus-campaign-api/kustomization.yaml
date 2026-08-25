@@ -7,7 +7,6 @@ resources:
 - ../../../bases/nexus-campaign-api
 - namespace.yaml
 - hpa.yaml
-- ghcr-secret.yaml
 
 patches:
 - path: deployment.yaml

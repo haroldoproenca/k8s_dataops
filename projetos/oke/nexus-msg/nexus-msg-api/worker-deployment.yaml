@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-msg-worker-deployment
+  labels:
+    app: nexus-msg-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nexus-msg-worker
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: nexus-msg-worker
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      imagePullSecrets:
+      - name: ghcr-secret
+      containers:
+      - name: nexus-msg-worker-container
+        image: ghcr.io/synapsehealthtech/nexus-msg-api:v0.1.0
+        imagePullPolicy: Always
+        command: ["python", "-m", "app.worker"]
+        envFrom:
+        - configMapRef:
+            name: nexus-msg-api-config
+        - secretRef:
+            name: nexus-msg-api-secrets
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "96Mi"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
+        readinessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "from app.database import engine; connection = engine.connect(); connection.close()"
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          exec:
+            command: ["python", "-c", "import os; os.kill(1, 0)"]
+          initialDelaySeconds: 20
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3

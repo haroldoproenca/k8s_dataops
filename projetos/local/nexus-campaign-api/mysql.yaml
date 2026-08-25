@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nexus-campaign-mysql-secret
+type: Opaque
+data:
+  mysql-root-password: Y2FtcGFpZ25fbG9jYWxfcm9vdF9wYXNzd29yZA==
+  mysql-password: Y2FtcGFpZ25fbG9jYWxfcGFzc3dvcmQ=
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nexus-campaign-mysql
+spec:
+  selector:
+    app: nexus-campaign-mysql
+  ports:
+  - name: mysql
+    port: 3306
+    targetPort: mysql
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nexus-campaign-mysql
+spec:
+  serviceName: nexus-campaign-mysql
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nexus-campaign-mysql
+  template:
+    metadata:
+      labels:
+        app: nexus-campaign-mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.4
+        ports:
+        - name: mysql
+          containerPort: 3306
+        env:
+        - name: MYSQL_DATABASE
+          value: nexus_campaign
+        - name: MYSQL_USER
+          value: campaign_user
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: nexus-campaign-mysql-secret
+              key: mysql-password
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: nexus-campaign-mysql-secret
+              key: mysql-root-password
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+        readinessProbe:
+          exec:
+            command: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$MYSQL_ROOT_PASSWORD\""]
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$MYSQL_ROOT_PASSWORD\""]
+          initialDelaySeconds: 30
+          periodSeconds: 10
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: local-path
+      resources:
+        requests:
+          storage: 5Gi

@@ -11,7 +11,7 @@ spec:
   parentRefs:
   - name: nexus-gateway
     namespace: nginx-gateway
-    sectionName: https
+    sectionName: tech-https
   hostnames:
   - "msg.tech.nexusplatform.com.br"
   rules:
@@ -32,4 +32,3 @@ spec:
     backendRefs:
     - name: nexus-msg-webapp-service
       port: 80
-

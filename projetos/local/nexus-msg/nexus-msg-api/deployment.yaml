@@ -7,6 +7,23 @@ spec:
     spec:
       containers:
       - name: nexus-msg-api-container
-        image: nexus-msg-api:latest
+        image: nexus-msg-api:v0.1.0
         imagePullPolicy: IfNotPresent
-
+        volumeMounts:
+        - name: gateway-data
+          mountPath: /data
+      - name: nexus-msg-worker-container
+        image: nexus-msg-api:v0.1.0
+        imagePullPolicy: IfNotPresent
+        command: ["python", "-m", "app.worker"]
+        envFrom:
+        - configMapRef:
+            name: nexus-msg-api-config
+        - secretRef:
+            name: nexus-msg-api-secrets
+        volumeMounts:
+        - name: gateway-data
+          mountPath: /data
+      volumes:
+      - name: gateway-data
+        emptyDir: {}

@@ -6,7 +6,6 @@ namespace: nexus-prod
 resources:
 - ../../../bases/nexus-campaign-webapp
 - namespace.yaml
-- ghcr-secret.yaml
 
 patches:
 - path: deployment.yaml
