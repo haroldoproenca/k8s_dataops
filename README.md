@@ -140,7 +140,8 @@ persistentes, desabilite `AUTO_CREATE_SCHEMA` e execute as migrations explicitam
 
 Após o Campaign API ficar pronto:
 
-1. gere um JWT admin em `GET /api/v1/admin/token`;
+1. gere um JWT admin em `POST /api/v1/admin/token`, enviando o Secret no header
+   `X-Nexus-CI-Token`;
 2. crie o tenant em `POST /api/v1/admin/tenants`;
 3. salve a API key retornada uma única vez como `NEXUS_CAMPAIGN_API_KEY` no Secret da
    `nexus-api`;

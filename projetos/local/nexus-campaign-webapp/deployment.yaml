@@ -9,4 +9,5 @@ spec:
       containers:
       - name: nexus-campaign-webapp
         image: ghcr.io/synapsehealthtech/nexus-campaign-webapp:v1.0.0
+        imagePullPolicy: IfNotPresent
         # resources: OMITIDO INTENCIONALMENTE — K3D local
