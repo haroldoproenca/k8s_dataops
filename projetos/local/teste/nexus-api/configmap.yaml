@@ -7,7 +7,7 @@ data:
   NEXUS_CEP_URL: "http://nexus-cep-service.nexus-cep.svc.cluster.local:80"
   # Habilite somente depois de gravar no Secret a API key emitida pelo motor.
   NEXUS_CAMPAIGN_ENABLED: "false"
-  NEXUS_CAMPAIGN_API_URL: "http://nexus-campaign-api-service.nexus-local.svc.cluster.local"
+  NEXUS_CAMPAIGN_API_URL: "http://nexus-campaign-api-service.nexus-campaign.svc.cluster.local"
   NEXUS_CAMPAIGN_TIMEOUT_SECONDS: "15"
   NEXUS_CAMPAIGN_DEFAULT_PHONE_COUNTRY_CODE: "55"
   SMTP_HOST: "smtp.email.sa-saopaulo-1.oci.oraclecloud.com"
@@ -22,5 +22,4 @@ data:
   META_APP_ID: ""
   META_EMBEDDED_SIGNUP_CONFIG_ID: ""
   META_GRAPH_API_VERSION: "v23.0"
-
 

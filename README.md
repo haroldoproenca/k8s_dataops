@@ -120,10 +120,10 @@ kubectl apply --dry-run=client -k projetos/local/teste/nexus-api
 
 ```bash
 kubectl apply -k projetos/local/nexus-campaign-api
-kubectl rollout status deployment/nexus-campaign-api -n nexus-local
+kubectl rollout status deployment/nexus-campaign-api -n nexus-campaign
 
 kubectl apply -k projetos/local/nexus-campaign-webapp
-kubectl rollout status deployment/nexus-campaign-webapp -n nexus-local
+kubectl rollout status deployment/nexus-campaign-webapp -n nexus-campaign
 
 kubectl apply -k projetos/local/nexus-msg
 kubectl rollout status deployment/nexus-msg-api-deployment -n nexus-msg-api
@@ -149,7 +149,7 @@ Após o Campaign API ficar pronto:
 
 ```yaml
 NEXUS_CAMPAIGN_ENABLED: "true"
-NEXUS_CAMPAIGN_API_URL: "http://nexus-campaign-api-service.nexus-local.svc.cluster.local"
+NEXUS_CAMPAIGN_API_URL: "http://nexus-campaign-api-service.nexus-campaign.svc.cluster.local"
 NEXUS_CAMPAIGN_TIMEOUT_SECONDS: "15"
 NEXUS_CAMPAIGN_DEFAULT_PHONE_COUNTRY_CODE: "55"
 ```
